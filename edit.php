@@ -7,14 +7,10 @@
 
 session_start();
 require_once 'koneksi.php';
+require_once 'auth_check.php'; // ← Guard ghost session terpusat
 
-// ── GUARD: wajib login DAN harus admin ──
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+// ── GUARD tambahan: harus admin ──
 if ($_SESSION['role'] !== 'admin') {
-    // User biasa tidak boleh edit laporan orang lain
     header('Location: dashboard.php');
     exit;
 }
@@ -39,6 +35,13 @@ if (mysqli_num_rows($result) === 0) {
 
 $laporan = mysqli_fetch_assoc($result);
 $errors  = [];
+
+// ── GUARD: Tolak akses jika laporan milik user yang sudah dihapus (user_id NULL) ──
+// Ini mencegah blank page atau error saat data relasi tidak lengkap
+if (is_null($laporan['user_id'])) {
+    header('Location: dashboard.php?pesan=laporan_terkunci');
+    exit;
+}
 
 // ── Proses form UPDATE (HANYA kolom 'status') ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -71,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ubah Status Laporan #<?= $id ?> | Lapor-Sekolah</title>
-    <meta name="description" content="Admin mengubah status laporan kerusakan fasilitas.">
+    <title>Tinjau Laporan #<?= $id ?> | Lapor-Sekolah</title>
+    <meta name="description" content="Admin meninjau dan memperbarui status laporan kerusakan fasilitas.">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -170,11 +173,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="page-header">
     <div class="container">
         <div class="d-flex align-items-center gap-3">
-            <div style="width:48px;height:48px;background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.4);border-radius:12px;display:flex;align-items:center;justify-content:center;">
-                <i class="bi bi-pencil-fill" style="color:#93c5fd;font-size:1.3rem;"></i>
+            <div style="width:48px;height:48px;background:rgba(129,140,248,0.15);border:1px solid rgba(129,140,248,0.4);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-eye-fill" style="color:#818cf8;font-size:1.3rem;"></i>
             </div>
             <div>
-                <h1>Ubah Status <span class="id-badge">ID #<?= $id ?></span></h1>
+                <h1>Tinjau Laporan <span class="id-badge">ID #<?= $id ?></span></h1>
                 <p>Data laporan bersifat <strong style="color:#fcd34d;">read-only</strong>. Admin hanya dapat mengubah status.
                 </p>
             </div>

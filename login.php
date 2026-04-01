@@ -16,6 +16,8 @@ if (isset($_SESSION['user_id'])) {
 require_once 'koneksi.php';
 
 $error = '';
+// Tangkap parameter pesan dari redirect (mis. akun_dihapus dari auth_check.php)
+$pesan_url = $_GET['pesan'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = trim($_POST['email']    ?? '');
@@ -66,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
     <style>
         :root {
@@ -258,6 +261,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 function togglePassword() {
     const input   = document.getElementById('password');
@@ -266,7 +270,35 @@ function togglePassword() {
     input.type  = visible ? 'password' : 'text';
     icon.className = visible ? 'bi bi-eye-fill' : 'bi bi-eye-slash-fill';
 }
+
+<?php if ($pesan_url === 'akun_dihapus'): ?>
+// Tampilkan SweetAlert2 jika akun telah dihapus admin
+window.addEventListener('DOMContentLoaded', function() {
+    Swal.fire({
+        title: 'Login Invalid!',
+        html: 'Akun Anda telah <strong style="color:#f87171;">dihapus oleh Admin</strong>.<br><span style="font-size:0.85rem;color:#94a3b8;">Hubungi Administrator sekolah jika ada pertanyaan.</span>',
+        icon: 'error',
+        confirmButtonText: '<i class="bi bi-arrow-left"></i> Kembali ke Halaman Login',
+        background: '#1e293b',
+        color: '#f1f5f9',
+        iconColor: '#ef4444',
+        customClass: {
+            popup:         'swal-login-popup',
+            title:         'swal-login-title',
+            confirmButton: 'swal-login-confirm',
+        },
+        buttonsStyling: false,
+    });
+});
+<?php endif; ?>
 </script>
+
+<style>
+.swal-login-popup   { border:1px solid #334155!important; border-radius:16px!important; font-family:'Inter',sans-serif!important; box-shadow:0 20px 60px rgba(0,0,0,0.6)!important; }
+.swal-login-title   { font-size:1.2rem!important; font-weight:800!important; color:#f1f5f9!important; }
+.swal-login-confirm { background:linear-gradient(135deg,#4f46e5,#7c3aed)!important; color:white!important; border:none!important; border-radius:10px!important; padding:0.65rem 1.4rem!important; font-weight:700!important; font-size:0.875rem!important; cursor:pointer!important; display:inline-flex!important; align-items:center!important; gap:0.4rem!important; transition:all 0.2s!important; }
+.swal-login-confirm:hover { transform:translateY(-2px)!important; }
+</style>
 
 </body>
 </html>

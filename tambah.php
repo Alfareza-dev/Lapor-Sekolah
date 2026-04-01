@@ -7,12 +7,7 @@
 
 session_start();
 require_once 'koneksi.php';
-
-// ── GUARD: wajib login ──
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once 'auth_check.php'; // ← Guard ghost session terpusat
 
 $session_user_id = (int) $_SESSION['user_id'];
 $session_nama    = $_SESSION['nama']; // Auto-fill nama pelapor
@@ -27,15 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama_pelapor = trim(mysqli_real_escape_string($koneksi, $_POST['nama_pelapor'] ?? ''));
     $fasilitas    = trim(mysqli_real_escape_string($koneksi, $_POST['fasilitas']    ?? ''));
     $deskripsi    = trim(mysqli_real_escape_string($koneksi, $_POST['deskripsi']    ?? ''));
-    $status       = trim(mysqli_real_escape_string($koneksi, $_POST['status']       ?? 'Menunggu'));
+    // Status SELALU 'Menunggu' saat pertama dibuat — tidak bisa dipilih user
+    $status = 'Menunggu';
 
     // ── 2. Validasi input wajib ──
     if (empty($nama_pelapor)) $errors[] = 'Nama pelapor wajib diisi.';
     if (empty($fasilitas))    $errors[] = 'Nama fasilitas wajib diisi.';
     if (empty($deskripsi))    $errors[] = 'Deskripsi kerusakan wajib diisi.';
-    if (!in_array($status, ['Menunggu', 'Diproses', 'Selesai'])) {
-        $errors[] = 'Status tidak valid.';
-    }
 
     // ── 3. Proses Upload Foto ──
     $nama_file_db = ''; // Default: tidak ada foto
@@ -276,14 +269,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                           rows="4" maxlength="1000"><?= htmlspecialchars($_POST['deskripsi'] ?? '') ?></textarea>
             </div>
 
-            <div class="form-group">
-                <label class="form-label-custom" for="status">Status Laporan</label>
-                <select id="status" name="status" class="form-select-custom">
-                    <option value="Menunggu"  <?= (($_POST['status'] ?? 'Menunggu') === 'Menunggu')  ? 'selected' : '' ?>>⏳ Menunggu Ditindaklanjuti</option>
-                    <option value="Diproses"  <?= (($_POST['status'] ?? '') === 'Diproses')  ? 'selected' : '' ?>>🔄 Sedang Diproses</option>
-                    <option value="Selesai"   <?= (($_POST['status'] ?? '') === 'Selesai')   ? 'selected' : '' ?>>✅ Selesai Diperbaiki</option>
-                </select>
-            </div>
+            <!-- Status otomatis 'Menunggu' — tidak perlu dipilih user -->
+            <!-- <hidden> field tidak diperlukan karena $status di-hardcode di PHP -->
 
             <hr class="section-divider">
 

@@ -7,12 +7,9 @@
 
 session_start();
 require_once 'koneksi.php';
+require_once 'auth_check.php'; // ← Guard ghost session terpusat
 
-// ── GUARD: wajib login + harus admin ──
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+// ── GUARD tambahan: harus admin ──
 if ($_SESSION['role'] !== 'admin') {
     header('Location: dashboard.php');
     exit;

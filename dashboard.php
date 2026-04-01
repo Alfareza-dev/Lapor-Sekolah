@@ -8,12 +8,7 @@
 
 session_start();
 require_once 'koneksi.php';
-
-// ── GUARD: wajib login ──────────────────────
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once 'auth_check.php'; // ← Guard ghost session terpusat
 
 // Ambil variabel session
 $session_id   = (int) $_SESSION['user_id'];
@@ -47,6 +42,7 @@ if (isset($_GET['pesan'])) {
         'edit_sukses'      => ['info',    '<i class="bi bi-arrow-repeat me-2"></i> Status laporan berhasil diperbarui!'],
         'hapus_sukses'     => ['warning', '<i class="bi bi-trash-fill me-2"></i> Laporan berhasil dihapus!'],
         'hapus_user_sukses'=> ['warning', '<i class="bi bi-person-x-fill me-2"></i> Akun user berhasil dihapus. Laporan mereka tetap tersimpan sebagai Anonim.'],
+        'laporan_terkunci' => ['warning', '<i class="bi bi-lock-fill me-2"></i> Laporan ini tidak dapat ditinjau karena akun pelapor sudah dihapus.'],
         'register_sukses'  => ['success', '<i class="bi bi-person-check-fill me-2"></i> Akun berhasil dibuat! Selamat datang, ' . htmlspecialchars($session_nama) . '!'],
     ];
     $key = $_GET['pesan'];
@@ -348,9 +344,11 @@ mysqli_data_seek($result, 0);
                     <i class="bi bi-table me-2" style="color:var(--primary-light);"></i>
                     <?= $is_admin ? 'Semua Laporan Kerusakan' : 'Laporan Saya' ?>
                 </h5>
+                <?php if (!$is_admin): ?>
                 <a href="tambah.php" class="btn-tambah">
                     <i class="bi bi-plus-lg"></i> Buat Laporan
                 </a>
+                <?php endif; ?>
             </div>
 
             <?php if (mysqli_num_rows($result) === 0): ?>
@@ -439,18 +437,25 @@ mysqli_data_seek($result, 0);
                             <td>
                                 <div class="d-flex gap-1 flex-wrap">
                                     <?php if ($is_admin): ?>
-                                    <!-- Admin: tampilkan Edit & Hapus -->
-                                    <a href="edit.php?id=<?= $laporan['id'] ?>" class="btn-action btn-edit">
-                                        <i class="bi bi-pencil-fill"></i> Edit
-                                    </a>
-                                    <button type="button"
-                                            class="btn-action btn-hapus tombol-hapus"
-                                            data-id="<?= $laporan['id'] ?>"
-                                            data-nama="<?= htmlspecialchars($laporan['fasilitas']) ?>">
-                                        <i class="bi bi-trash-fill"></i> Hapus
-                                    </button>
+                                    <?php if (is_null($laporan['user_id'])): ?>
+                                        <!-- user_id NULL = user dihapus → laporan terkunci, tidak bisa ditinjau -->
+                                        <span class="btn-action" style="background:rgba(100,116,139,0.15);color:#64748b;border:1px solid rgba(100,116,139,0.3);cursor:not-allowed;" title="Laporan ini milik akun yang sudah dihapus">
+                                            <i class="bi bi-lock-fill"></i> Terkunci
+                                        </span>
                                     <?php else: ?>
-                                    <!-- User: hanya tampilkan status badge, tidak ada Edit/Hapus -->
+                                        <!-- user_id ada → tampilkan Tinjau & Hapus -->
+                                        <a href="edit.php?id=<?= $laporan['id'] ?>" class="btn-action btn-edit">
+                                            <i class="bi bi-eye-fill"></i> Tinjau
+                                        </a>
+                                        <button type="button"
+                                                class="btn-action btn-hapus tombol-hapus"
+                                                data-id="<?= $laporan['id'] ?>"
+                                                data-nama="<?= htmlspecialchars($laporan['fasilitas']) ?>">
+                                            <i class="bi bi-trash-fill"></i> Hapus
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php else: ?>
+                                    <!-- User: read only -->
                                     <span style="color:var(--text-muted);font-size:0.78rem;">
                                         <i class="bi bi-lock-fill me-1"></i>Read Only
                                     </span>

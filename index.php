@@ -383,7 +383,7 @@ if (isset($_SESSION['user_id'])) {
             <i class="bi bi-shield-check me-1" style="color:var(--primary-light);"></i>
             <strong>Lapor-Sekolah</strong> &mdash; Portal Pelaporan Fasilitas &copy; <?= date('Y') ?>
         </p>
-        <p class="mt-1" style="font-size:0.75rem;opacity:0.6;">Tugas XI RPL &bull; SMK Telkom Malang &bull; PHP Native &amp; Bootstrap 5</p>
+        <p class="mt-1" style="font-size:0.75rem;opacity:0.6;">SMK Telkom Malang &bull; PHP Native &amp; Bootstrap 5</p>
     </div>
 </footer>
 

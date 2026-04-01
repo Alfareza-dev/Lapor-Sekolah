@@ -1,51 +1,34 @@
 <?php
-// ============================================
-// FILE: login.php
-// Deskripsi: Halaman login dengan validasi
-// session dan password_verify()
-// ============================================
-
 session_start();
-
-// Jika sudah login, langsung ke dashboard
 if (isset($_SESSION['user_id'])) {
     header('Location: dashboard.php');
     exit;
 }
 
-require_once 'koneksi.php';
+require_once 'config/koneksi.php';
 
 $error = '';
-// Tangkap parameter pesan dari redirect (mis. akun_dihapus dari auth_check.php)
 $pesan_url = $_GET['pesan'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = trim($_POST['email']    ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    // Validasi input tidak kosong
     if (empty($email) || empty($password)) {
         $error = 'Email dan password wajib diisi.';
     } else {
-        // Ambil user berdasarkan email
         $email_esc = mysqli_real_escape_string($koneksi, $email);
         $sql  = "SELECT id, nama, email, password, role FROM users WHERE email = '$email_esc' LIMIT 1";
         $res  = mysqli_query($koneksi, $sql);
 
         if (mysqli_num_rows($res) === 1) {
             $user = mysqli_fetch_assoc($res);
-
-            // Verifikasi password dengan bcrypt
             if (password_verify($password, $user['password'])) {
-                // ✅ Login berhasil — set session
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['nama']    = $user['nama'];
                 $_SESSION['email']   = $user['email'];
                 $_SESSION['role']    = $user['role'];
-
-                // Regenerate session ID untuk keamanan (cegah session fixation)
                 session_regenerate_id(true);
-
                 header('Location: dashboard.php');
                 exit;
             } else {
@@ -64,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk | Lapor-Sekolah</title>
     <meta name="description" content="Masuk ke akun Lapor-Sekolah kamu untuk mulai membuat laporan.">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -87,8 +69,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 radial-gradient(ellipse 70% 60% at 15% 30%, rgba(79,70,229,0.12) 0%, transparent 60%),
                 radial-gradient(ellipse 50% 50% at 85% 70%, rgba(124,58,237,0.09) 0%, transparent 55%);
         }
-
-        /* Navbar */
         nav {
             position:relative; z-index:10;
             background:rgba(15,23,42,0.8); backdrop-filter:blur(20px);
@@ -102,15 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-clip:text; text-decoration:none;
         }
         .brand span { -webkit-text-fill-color:var(--text-primary); }
-
-        /* Auth Container */
         .auth-container {
             flex:1; display:flex; align-items:center; justify-content:center;
-            padding:3rem 1rem; position:relative; z-index:1;
+            padding:clamp(1.5rem, 5vw, 3rem) 1rem; position:relative; z-index:1;
         }
         .auth-card {
             background:var(--card-bg); border:1px solid var(--border);
-            border-radius:20px; padding:2.5rem; width:100%; max-width:440px;
+            border-radius:20px; padding:clamp(1.5rem, 5vw, 2.5rem); width:100%; max-width:440px;
             box-shadow:0 20px 60px rgba(0,0,0,0.4);
         }
         .auth-logo {
@@ -122,8 +100,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .auth-title { font-size:1.6rem; font-weight:800; margin-bottom:0.4rem; }
         .auth-sub   { color:var(--text-muted); font-size:0.9rem; margin-bottom:2rem; }
-
-        /* Form elements */
         .form-group { margin-bottom:1.25rem; }
         .form-label-custom {
             display:block; font-weight:600; font-size:0.85rem;
@@ -146,14 +122,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow:0 0 0 3px rgba(79,70,229,0.15);
             background:rgba(79,70,229,0.05);
         }
-        /* Toggle password visibility */
         .toggle-pass {
             position:absolute; right:1rem; top:50%; transform:translateY(-50%);
             cursor:pointer; color:var(--text-muted); transition:color 0.2s;
             background:none; border:none; padding:0;
         }
         .toggle-pass:hover { color:var(--primary-light); }
-
         .btn-submit {
             width:100%; background:linear-gradient(135deg,var(--primary),var(--violet));
             color:white; border:none; border-radius:10px;
@@ -164,7 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .btn-submit:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(79,70,229,0.5); }
         .btn-submit:active { transform:translateY(0); }
-
         .divider {
             display:flex; align-items:center; gap:1rem; margin:1.5rem 0;
             color:var(--text-muted); font-size:0.8rem;
@@ -172,7 +145,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .divider::before, .divider::after {
             content:''; flex:1; height:1px; background:var(--border);
         }
-
         .link-register {
             text-align:center; font-size:0.9rem; color:var(--text-muted);
         }
@@ -180,7 +152,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color:var(--primary-light); font-weight:600; text-decoration:none;
         }
         .link-register a:hover { text-decoration:underline; }
-
         .alert-error {
             background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35);
             border-radius:10px; padding:0.85rem 1rem; margin-bottom:1.25rem;
@@ -188,14 +159,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display:flex; align-items:center; gap:0.5rem;
         }
         .alert-error i { flex-shrink:0; }
-
         footer { position:relative; z-index:1; background:var(--card-bg); border-top:1px solid var(--border); padding:1.25rem 0; text-align:center; color:var(--text-muted); font-size:0.8rem; }
     </style>
 </head>
 <body>
-
 <div class="bg-glow"></div>
-
 <nav>
     <div class="container">
         <a href="index.php" class="brand">
@@ -228,7 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            autocomplete="email" required>
                 </div>
             </div>
-
             <div class="form-group">
                 <label class="form-label-custom" for="password">Password</label>
                 <div class="input-wrapper">
@@ -241,14 +208,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </div>
             </div>
-
             <button type="submit" class="btn-submit">
                 <i class="bi bi-box-arrow-in-right"></i> Masuk ke Dashboard
             </button>
         </form>
 
         <div class="divider">atau</div>
-
         <div class="link-register">
             Belum punya akun? <a href="register.php">Daftar Sekarang</a>
         </div>
@@ -270,9 +235,7 @@ function togglePassword() {
     input.type  = visible ? 'password' : 'text';
     icon.className = visible ? 'bi bi-eye-fill' : 'bi bi-eye-slash-fill';
 }
-
 <?php if ($pesan_url === 'akun_dihapus'): ?>
-// Tampilkan SweetAlert2 jika akun telah dihapus admin
 window.addEventListener('DOMContentLoaded', function() {
     Swal.fire({
         title: 'Login Invalid!',
@@ -299,6 +262,5 @@ window.addEventListener('DOMContentLoaded', function() {
 .swal-login-confirm { background:linear-gradient(135deg,#4f46e5,#7c3aed)!important; color:white!important; border:none!important; border-radius:10px!important; padding:0.65rem 1.4rem!important; font-weight:700!important; font-size:0.875rem!important; cursor:pointer!important; display:inline-flex!important; align-items:center!important; gap:0.4rem!important; transition:all 0.2s!important; }
 .swal-login-confirm:hover { transform:translateY(-2px)!important; }
 </style>
-
 </body>
 </html>

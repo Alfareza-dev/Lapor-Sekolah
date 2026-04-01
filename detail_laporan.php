@@ -1,24 +1,13 @@
 <?php
-// ============================================
-// FILE: detail_laporan.php
-// Deskripsi: Halaman user untuk melihat detail
-// laporan miliknya + Catatan Admin.
-// Jika status 'Menunggu' → tampilkan form edit.
-// Jika status 'Diproses'/'Selesai' → read-only.
-// ============================================
-
 session_start();
-require_once 'koneksi.php';
-require_once 'auth_check.php'; // Guard: cek login + ghost session
+require_once 'config/koneksi.php';
+require_once 'config/auth_check.php';
 
-// ── GUARD: Hanya user biasa yang boleh akses ──
-// Admin punya edit.php, jadi redirect agar tidak rancu
 if ($_SESSION['role'] === 'admin') {
     header('Location: dashboard.php');
     exit;
 }
 
-// ── Validasi parameter ID ──
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header('Location: dashboard.php');
     exit;
@@ -27,8 +16,6 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $id         = (int) $_GET['id'];
 $session_uid = (int) $_SESSION['user_id'];
 
-// ── Ambil laporan HANYA jika milik user yang login ──
-// Ini mencegah user A mengakses laporan user B dengan menebak ID
 $sql = "SELECT * FROM laporan_kerusakan WHERE id = ? AND user_id = ? LIMIT 1";
 $stmt = mysqli_prepare($koneksi, $sql);
 mysqli_stmt_bind_param($stmt, 'ii', $id, $session_uid);
@@ -37,29 +24,24 @@ $result  = mysqli_stmt_get_result($stmt);
 mysqli_stmt_close($stmt);
 
 if (mysqli_num_rows($result) === 0) {
-    // Laporan tidak ada ATAU bukan milik user ini → tolak akses
     header('Location: dashboard.php');
     exit;
 }
 
 $laporan     = mysqli_fetch_assoc($result);
-$is_editable = ($laporan['status'] === 'Menunggu'); // Hanya bisa diedit jika masih Menunggu
+$is_editable = ($laporan['status'] === 'Menunggu');
 $errors      = [];
 $success_msg = '';
 
-// ── Proses UPDATE jika user submit form edit ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_editable) {
-
-    // 1. Ambil & sanitasi input teks
     $fasilitas = trim($_POST['fasilitas'] ?? '');
     $deskripsi = trim($_POST['deskripsi'] ?? '');
 
     if (empty($fasilitas)) $errors[] = 'Nama fasilitas wajib diisi.';
     if (empty($deskripsi)) $errors[] = 'Deskripsi kerusakan wajib diisi.';
 
-    // 2. Proses upload foto baru (jika ada)
     $foto_lama    = $laporan['foto_bukti'];
-    $nama_file_db = $foto_lama; // default: pakai foto lama
+    $nama_file_db = $foto_lama;
 
     if (isset($_FILES['foto_bukti']) && $_FILES['foto_bukti']['error'] !== UPLOAD_ERR_NO_FILE) {
         $file      = $_FILES['foto_bukti'];
@@ -72,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_editable) {
         $allowed_exts  = ['jpg', 'jpeg', 'png'];
         $file_ext      = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
 
-        // Validasi MIME type dengan finfo (anti spoofing)
         $finfo     = finfo_open(FILEINFO_MIME_TYPE);
         $mime_type = finfo_file($finfo, $file_tmp);
         finfo_close($finfo);
@@ -90,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_editable) {
             if (!is_dir('uploads')) mkdir('uploads', 0755, true);
 
             if (move_uploaded_file($file_tmp, 'uploads/' . $nama_file_baru)) {
-                // Hapus foto lama dari server agar tidak menumpuk
                 if (!empty($foto_lama) && file_exists('uploads/' . $foto_lama)) {
                     unlink('uploads/' . $foto_lama);
                 }
@@ -101,7 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_editable) {
         }
     }
 
-    // 3. Simpan ke database jika tidak ada error
     if (empty($errors)) {
         $stmt_upd = mysqli_prepare(
             $koneksi,
@@ -111,15 +90,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_editable) {
 
         if (mysqli_stmt_execute($stmt_upd)) {
             mysqli_stmt_close($stmt_upd);
-
-            // Refresh data laporan setelah update
             $stmt_ref = mysqli_prepare($koneksi, "SELECT * FROM laporan_kerusakan WHERE id = ? LIMIT 1");
             mysqli_stmt_bind_param($stmt_ref, 'i', $id);
             mysqli_stmt_execute($stmt_ref);
             $res_ref = mysqli_stmt_get_result($stmt_ref);
             $laporan = mysqli_fetch_assoc($res_ref);
             mysqli_stmt_close($stmt_ref);
-
             $success_msg = 'Laporan berhasil diperbarui!';
         } else {
             $errors[] = 'Gagal menyimpan perubahan: ' . mysqli_stmt_error($stmt_upd);
@@ -128,7 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_editable) {
     }
 }
 
-// Helper: badge status
 function get_status_badge(string $status): string {
     return match($status) {
         'Diproses' => '<span style="background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3);padding:0.3rem 0.8rem;border-radius:50px;font-size:0.78rem;font-weight:700;">🔄 Sedang Diproses</span>',
@@ -144,12 +119,10 @@ function get_status_badge(string $status): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detail Laporan #<?= $id ?> | Lapor-Sekolah</title>
     <meta name="description" content="Detail laporan kerusakan fasilitas sekolah yang kamu kirimkan.">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-
     <style>
         :root {
             --primary: #4f46e5; --primary-light: #818cf8; --violet: #7c3aed;
@@ -163,8 +136,6 @@ function get_status_badge(string $status): string {
             background: var(--dark-bg); color: var(--text-primary);
             min-height: 100vh; display: flex; flex-direction: column;
         }
-
-        /* ── Navbar ── */
         .navbar-custom {
             background: rgba(15,23,42,0.95); backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border); padding: 0.9rem 0;
@@ -185,8 +156,6 @@ function get_status_badge(string $status): string {
             transition: all 0.2s;
         }
         .btn-back-nav:hover { color: var(--text-primary); background: rgba(255,255,255,0.09); }
-
-        /* ── Page Header ── */
         .page-header {
             background: linear-gradient(135deg, #0d2137, #1a1f3a, #0d2137);
             border-bottom: 1px solid var(--border); padding: 1.75rem 0;
@@ -212,8 +181,6 @@ function get_status_badge(string $status): string {
             color: #6ee7b7; padding: 0.25rem 0.75rem; border-radius: 8px;
             font-size: 0.8rem; font-weight: 700;
         }
-
-        /* ── Layout ── */
         .main-content { flex: 1; padding: 2rem 0; }
         .detail-card {
             background: var(--card-bg); border: 1px solid var(--border);
@@ -221,7 +188,7 @@ function get_status_badge(string $status): string {
             max-width: 780px; margin: 0 auto;
         }
         .card-section {
-            padding: 1.5rem 2rem;
+            padding: clamp(1.25rem, 4vw, 2rem);
             border-bottom: 1px solid var(--border);
         }
         .card-section:last-child { border-bottom: none; }
@@ -230,8 +197,6 @@ function get_status_badge(string $status): string {
             letter-spacing: 0.08em; margin-bottom: 1.1rem;
             display: flex; align-items: center; gap: 0.4rem;
         }
-
-        /* ── Field Display ── */
         .field-label {
             font-size: 0.78rem; font-weight: 600; color: var(--text-muted);
             text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;
@@ -242,8 +207,6 @@ function get_status_badge(string $status): string {
         }
         .field-group { margin-bottom: 1.1rem; }
         .field-group:last-child { margin-bottom: 0; }
-
-        /* ── Read-only form fields (for edit form) ── */
         .form-label-custom {
             display: block; font-weight: 600; font-size: 0.83rem;
             color: var(--primary-light); margin-bottom: 0.4rem;
@@ -262,8 +225,6 @@ function get_status_badge(string $status): string {
             box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
             background: rgba(79,70,229,0.05);
         }
-
-        /* ── Upload area ── */
         .upload-area {
             border: 2px dashed var(--border); border-radius: 12px;
             padding: 1.5rem; text-align: center; cursor: pointer;
@@ -274,8 +235,6 @@ function get_status_badge(string $status): string {
         #foto_bukti { display: none; }
         #preview-container { margin-top: 0.75rem; display: none; }
         #preview-img { max-width: 200px; border-radius: 10px; border: 2px solid var(--border); }
-
-        /* ── Catatan Admin box ── */
         .catatan-box {
             background: rgba(79,70,229,0.07); border: 1px solid rgba(79,70,229,0.25);
             border-radius: 12px; padding: 1.1rem 1.25rem;
@@ -294,13 +253,6 @@ function get_status_badge(string $status): string {
             font-size: 0.9rem; line-height: 1.7; color: var(--text-primary);
             white-space: pre-line;
         }
-
-        /* ── Status badge inline ── */
-        .status-row {
-            display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-        }
-
-        /* ── Alerts ── */
         .alert-error {
             background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
             border-radius: 10px; padding: 0.9rem 1.1rem; margin-bottom: 1.25rem;
@@ -313,16 +265,12 @@ function get_status_badge(string $status): string {
             color: #6ee7b7; font-size: 0.875rem;
             display: flex; align-items: center; gap: 0.6rem;
         }
-
-        /* ── Lock banner (status non-Menunggu) ── */
         .lock-banner {
             background: rgba(100,116,139,0.08); border: 1px solid rgba(100,116,139,0.2);
             border-radius: 10px; padding:0.85rem 1.1rem;
             color: var(--text-muted); font-size: 0.875rem;
             display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.25rem;
         }
-
-        /* ── Buttons ── */
         .btn-submit {
             background: linear-gradient(135deg, var(--primary), var(--violet));
             color: white; border: none; border-radius: 10px;
@@ -339,7 +287,6 @@ function get_status_badge(string $status): string {
             transition: all 0.2s;
         }
         .btn-back:hover { color: var(--text-primary); background: rgba(255,255,255,0.09); }
-
         footer {
             background: var(--card-bg); border-top: 1px solid var(--border);
             padding: 1.4rem 0; text-align: center; color: var(--text-muted); font-size: 0.82rem;
@@ -347,8 +294,6 @@ function get_status_badge(string $status): string {
     </style>
 </head>
 <body>
-
-<!-- ── NAVBAR ── -->
 <nav class="navbar-custom">
     <div class="container d-flex align-items-center justify-content-between">
         <a class="navbar-brand-custom" href="dashboard.php">
@@ -366,7 +311,6 @@ function get_status_badge(string $status): string {
     </div>
 </nav>
 
-<!-- ── PAGE HEADER ── -->
 <div class="page-header">
     <div class="container">
         <div class="d-flex align-items-center gap-3">
@@ -384,17 +328,13 @@ function get_status_badge(string $status): string {
     </div>
 </div>
 
-<!-- ── MAIN CONTENT ── -->
 <main class="main-content">
     <div class="container">
         <div class="detail-card">
-
-            <!-- ═══ SECTION 1: INFO LAPORAN (selalu read-only) ═══ -->
             <div class="card-section">
                 <div class="section-title" style="color:#6ee7b7;">
                     <i class="bi bi-info-circle-fill"></i> Informasi Laporan
                 </div>
-
                 <div class="field-group">
                     <div class="field-label">Nama Pelapor</div>
                     <div class="field-value"><?= htmlspecialchars($laporan['nama_pelapor']) ?></div>
@@ -407,8 +347,6 @@ function get_status_badge(string $status): string {
                     <div class="field-label">Deskripsi Kerusakan</div>
                     <div class="field-value" style="white-space:pre-line;"><?= htmlspecialchars($laporan['deskripsi']) ?></div>
                 </div>
-
-                <!-- Foto Bukti -->
                 <?php if (!empty($laporan['foto_bukti']) && file_exists('uploads/' . $laporan['foto_bukti'])): ?>
                 <div class="field-group">
                     <div class="field-label">Foto Bukti</div>
@@ -432,12 +370,10 @@ function get_status_badge(string $status): string {
                 <?php endif; ?>
             </div>
 
-            <!-- ═══ SECTION 2: CATATAN ADMIN ═══ -->
             <div class="card-section">
                 <div class="section-title" style="color:var(--primary-light);">
                     <i class="bi bi-chat-left-text-fill"></i> Catatan dari Admin
                 </div>
-
                 <?php if (!empty($laporan['catatan_admin'])): ?>
                 <div class="catatan-box">
                     <div class="catatan-admin-label">
@@ -453,7 +389,6 @@ function get_status_badge(string $status): string {
                 <?php endif; ?>
             </div>
 
-            <!-- ═══ SECTION 3: FORM EDIT (hanya jika status 'Menunggu') ═══ -->
             <div class="card-section">
                 <div class="section-title" style="color:<?= $is_editable ? '#fcd34d' : 'var(--text-muted)' ?>;">
                     <i class="bi bi-<?= $is_editable ? 'pencil-square' : 'lock-fill' ?>"></i>
@@ -482,7 +417,6 @@ function get_status_badge(string $status): string {
                 <?php endif; ?>
 
                 <?php if ($is_editable): ?>
-                <!-- ── FORM EDIT (status masih Menunggu) ── -->
                 <div style="background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.15);border-radius:10px;padding:0.8rem 1rem;margin-bottom:1.25rem;font-size:0.83rem;color:#fcd34d;">
                     <i class="bi bi-info-circle me-1"></i>
                     Laporan masih bisa diedit karena statusnya <strong>Menunggu</strong>.
@@ -490,7 +424,6 @@ function get_status_badge(string $status): string {
                 </div>
 
                 <form method="POST" enctype="multipart/form-data" novalidate>
-
                     <div class="form-group-edit">
                         <label class="form-label-custom" for="fasilitas">
                             Fasilitas yang Rusak <span style="color:#fca5a5;font-size:0.7rem;">*Wajib</span>
@@ -501,7 +434,6 @@ function get_status_badge(string $status): string {
                                maxlength="150"
                                placeholder="Nama fasilitas yang rusak">
                     </div>
-
                     <div class="form-group-edit">
                         <label class="form-label-custom" for="deskripsi">
                             Deskripsi Kerusakan <span style="color:#fca5a5;font-size:0.7rem;">*Wajib</span>
@@ -512,7 +444,6 @@ function get_status_badge(string $status): string {
                                   placeholder="Jelaskan kondisi kerusakan secara detail..."
                                   style="resize:vertical;"><?= htmlspecialchars($laporan['deskripsi']) ?></textarea>
                     </div>
-
                     <div class="form-group-edit">
                         <label class="form-label-custom">
                             <i class="bi bi-image me-1"></i>Ganti Foto Bukti
@@ -539,7 +470,6 @@ function get_status_badge(string $status): string {
                             <p style="font-size:0.75rem;opacity:0.6;margin-top:0.25rem;">JPG, JPEG, PNG &bull; Maks. 5 MB</p>
                         </div>
                         <input type="file" id="foto_bukti" name="foto_bukti" accept=".jpg,.jpeg,.png">
-
                         <div id="preview-container">
                             <img id="preview-img" src="" alt="Preview">
                             <p id="preview-name" style="color:var(--text-muted);font-size:0.8rem;margin-top:0.4rem;"></p>
@@ -554,11 +484,9 @@ function get_status_badge(string $status): string {
                             <i class="bi bi-save-fill"></i> Simpan Perubahan
                         </button>
                     </div>
-
                 </form>
 
                 <?php else: ?>
-                <!-- ── READ-ONLY (status Diproses / Selesai) ── -->
                 <div class="lock-banner">
                     <i class="bi bi-lock-fill" style="color:#64748b;font-size:1.1rem;flex-shrink:0;"></i>
                     <div>
@@ -574,12 +502,10 @@ function get_status_badge(string $status): string {
                 </div>
                 <?php endif; ?>
             </div>
-
-        </div><!-- /.detail-card -->
+        </div>
     </div>
 </main>
 
-<!-- ── FOOTER ── -->
 <footer>
     <div class="container">
         <p>
@@ -591,9 +517,7 @@ function get_status_badge(string $status): string {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-// ── Preview foto sebelum upload ──
 const fotoInput = document.getElementById('foto_bukti');
 if (fotoInput) {
     fotoInput.addEventListener('change', function() {
@@ -612,7 +536,6 @@ if (fotoInput) {
     });
 }
 
-// ── Drag & Drop ──
 const uploadArea = document.querySelector('.upload-area');
 if (uploadArea) {
     uploadArea.addEventListener('dragover',  (e) => { e.preventDefault(); uploadArea.style.borderColor = '#818cf8'; });
@@ -630,7 +553,6 @@ if (uploadArea) {
     });
 }
 
-// ── Lightbox foto ──
 function showFoto(src) {
     Swal.fire({
         imageUrl: src,
@@ -646,17 +568,14 @@ function showFoto(src) {
 }
 
 <?php if (!empty($success_msg)): ?>
-// Auto-fade pesan sukses setelah 4 detik
 setTimeout(() => {
     const el = document.querySelector('.alert-success');
     if (el) el.style.transition = 'opacity 0.5s', el.style.opacity = '0';
 }, 4000);
 <?php endif; ?>
 </script>
-
 <style>
 .swal-foto-popup { border: 1px solid #334155 !important; border-radius: 16px !important; max-width: 90vw !important; }
 </style>
-
 </body>
 </html>

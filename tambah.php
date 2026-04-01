@@ -1,37 +1,25 @@
 <?php
-// ============================================
-// FILE: tambah.php
-// Deskripsi: Form input laporan baru + proses
-// INSERT data ke database + upload foto
-// ============================================
-
 session_start();
-require_once 'koneksi.php';
-require_once 'auth_check.php'; // ← Guard ghost session terpusat
+require_once 'config/koneksi.php';
+require_once 'config/auth_check.php';
 
 $session_user_id = (int) $_SESSION['user_id'];
-$session_nama    = $_SESSION['nama']; // Auto-fill nama pelapor
+$session_nama    = $_SESSION['nama'];
 
 $errors  = [];
 $success = false;
 
-// Proses form ketika tombol Submit ditekan
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    // ── 1. Ambil & sanitasi input teks ──
     $nama_pelapor = trim(mysqli_real_escape_string($koneksi, $_POST['nama_pelapor'] ?? ''));
     $fasilitas    = trim(mysqli_real_escape_string($koneksi, $_POST['fasilitas']    ?? ''));
     $deskripsi    = trim(mysqli_real_escape_string($koneksi, $_POST['deskripsi']    ?? ''));
-    // Status SELALU 'Menunggu' saat pertama dibuat — tidak bisa dipilih user
     $status = 'Menunggu';
 
-    // ── 2. Validasi input wajib ──
     if (empty($nama_pelapor)) $errors[] = 'Nama pelapor wajib diisi.';
     if (empty($fasilitas))    $errors[] = 'Nama fasilitas wajib diisi.';
     if (empty($deskripsi))    $errors[] = 'Deskripsi kerusakan wajib diisi.';
 
-    // ── 3. Proses Upload Foto ──
-    $nama_file_db = ''; // Default: tidak ada foto
+    $nama_file_db = '';
 
     if (isset($_FILES['foto_bukti']) && $_FILES['foto_bukti']['error'] !== UPLOAD_ERR_NO_FILE) {
         $file      = $_FILES['foto_bukti'];
@@ -40,7 +28,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $file_size = $file['size'];
         $file_error= $file['error'];
 
-        // Validasi: cek apakah file benar-benar gambar (bukan hanya extension)
         $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
         $allowed_exts  = ['jpg', 'jpeg', 'png'];
 
@@ -55,14 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Ekstensi file tidak diizinkan. Hanya .jpg, .jpeg, dan .png yang diperbolehkan.';
         } elseif (!in_array($mime_type, $allowed_types)) {
             $errors[] = 'Tipe file tidak valid. File harus berupa gambar JPG atau PNG asli.';
-        } elseif ($file_size > 5 * 1024 * 1024) { // Maks 5 MB
+        } elseif ($file_size > 5 * 1024 * 1024) {
             $errors[] = 'Ukuran file terlalu besar. Maksimal 5 MB.';
         } else {
-            // Buat nama file unik agar tidak tertimpa
             $nama_file_baru = 'foto_' . time() . '_' . uniqid() . '.' . $file_ext;
             $upload_path    = 'uploads/' . $nama_file_baru;
 
-            // Buat folder uploads jika belum ada
             if (!is_dir('uploads')) {
                 mkdir('uploads', 0755, true);
             }
@@ -75,13 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // ── 4. Simpan ke database jika tidak ada error ──
     if (empty($errors)) {
         $sql = "INSERT INTO laporan_kerusakan (user_id, nama_pelapor, fasilitas, deskripsi, foto_bukti, status)
                 VALUES ($session_user_id, '$nama_pelapor', '$fasilitas', '$deskripsi', '$nama_file_db', '$status')";
 
         if (mysqli_query($koneksi, $sql)) {
-            // Redirect ke dashboard dengan pesan sukses
             header('Location: dashboard.php?pesan=tambah_sukses');
             exit;
         } else {
@@ -97,11 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambah Laporan | Lapor-Sekolah</title>
     <meta name="description" content="Form untuk menambahkan laporan kerusakan fasilitas sekolah baru.">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
     <style>
         :root {
             --primary: #4f46e5; --primary-dark: #3730a3; --primary-light: #818cf8;
@@ -110,20 +91,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--dark-bg); color: var(--text-primary); min-height: 100vh; }
-
         .navbar-custom { background: rgba(15,23,42,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 1rem 0; }
         .navbar-brand-custom { font-size:1.4rem; font-weight:800; background: linear-gradient(135deg,var(--primary-light),#c084fc); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-decoration:none; }
         .navbar-brand-custom span { -webkit-text-fill-color: var(--text-primary); }
-
         .page-header { background: linear-gradient(135deg,#1e1b4b,#312e81); border-bottom: 1px solid var(--border); padding: 2rem 0; }
         .page-header h1 { font-size:1.8rem; font-weight:800; margin:0; }
         .page-header p { color: var(--text-muted); margin: 0.5rem 0 0; }
-
-        .form-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin: 2rem auto; max-width: 750px; }
-
+        .form-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: clamp(1.5rem, 5vw, 2.5rem); margin: 2rem auto; max-width: 750px; }
         .form-label-custom { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: var(--primary-light); display: block; }
         .badge-required { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; margin-left: 0.3rem; vertical-align: middle; }
-
         .form-control-custom, .form-select-custom {
             width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
             border-radius: 10px; padding: 0.75rem 1rem; color: var(--text-primary);
@@ -137,7 +113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: rgba(79,70,229,0.05);
         }
         .form-select-custom option { background: var(--card-bg); color: var(--text-primary); }
-
         .upload-area {
             border: 2px dashed var(--border); border-radius: 12px; padding: 2rem; text-align: center;
             cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.02);
@@ -147,10 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .upload-area p { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
         .upload-area .upload-hint { font-size: 0.75rem; opacity: 0.6; margin-top: 0.3rem; }
         #foto_bukti { display: none; }
-
         #preview-container { margin-top: 1rem; display: none; }
         #preview-img { max-width: 200px; border-radius: 10px; border: 2px solid var(--border); }
-
         .btn-submit {
             background: linear-gradient(135deg, var(--primary), #7c3aed);
             color: white; border: none; border-radius: 10px;
@@ -161,7 +134,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
         }
         .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,70,229,0.5); }
-
         .btn-back {
             background: rgba(255,255,255,0.05); color: var(--text-muted);
             border: 1px solid var(--border); border-radius: 10px;
@@ -170,7 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 0.5rem; transition: all 0.2s;
         }
         .btn-back:hover { color: var(--text-primary); background: rgba(255,255,255,0.08); }
-
         .alert-error {
             background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
             border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;
@@ -178,16 +149,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .alert-error ul { margin: 0.5rem 0 0; padding-left: 1.2rem; }
         .alert-error li { font-size: 0.875rem; margin-bottom: 0.25rem; }
-
         .section-divider { border: none; border-top: 1px solid var(--border); margin: 1.75rem 0; }
-
         .form-group { margin-bottom: 1.25rem; }
-
         footer { background: var(--card-bg); border-top: 1px solid var(--border); padding: 1.5rem 0; text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 3rem; }
     </style>
 </head>
 <body>
-
 <nav class="navbar-custom sticky-top">
     <div class="container d-flex align-items-center">
         <a class="navbar-brand-custom" href="dashboard.php">
@@ -212,7 +179,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="container">
     <div class="form-card">
-
         <?php if (!empty($errors)): ?>
         <div class="alert-error">
             <strong><i class="bi bi-exclamation-triangle-fill me-2"></i>Terdapat kesalahan! Harap perbaiki sebelum melanjutkan:</strong>
@@ -225,12 +191,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST" enctype="multipart/form-data" novalidate>
-
-            <!-- Informasi Pelapor -->
             <h6 style="color:var(--text-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:1rem;">
                 <i class="bi bi-person me-1"></i> Informasi Pelapor
             </h6>
-
             <div class="form-group">
                 <label class="form-label-custom" for="nama_pelapor">
                     Nama Lengkap <span class="badge-required">Wajib</span>
@@ -244,11 +207,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <hr class="section-divider">
 
-            <!-- Detail Kerusakan -->
             <h6 style="color:var(--text-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:1rem;">
                 <i class="bi bi-wrench me-1"></i> Detail Kerusakan
             </h6>
-
             <div class="form-group">
                 <label class="form-label-custom" for="fasilitas">
                     Fasilitas yang Rusak <span class="badge-required">Wajib</span>
@@ -259,7 +220,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        value="<?= htmlspecialchars($_POST['fasilitas'] ?? '') ?>"
                        maxlength="150">
             </div>
-
             <div class="form-group">
                 <label class="form-label-custom" for="deskripsi">
                     Deskripsi Kerusakan <span class="badge-required">Wajib</span>
@@ -269,16 +229,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                           rows="4" maxlength="1000"><?= htmlspecialchars($_POST['deskripsi'] ?? '') ?></textarea>
             </div>
 
-            <!-- Status otomatis 'Menunggu' — tidak perlu dipilih user -->
-            <!-- <hidden> field tidak diperlukan karena $status di-hardcode di PHP -->
-
             <hr class="section-divider">
 
-            <!-- Upload Foto -->
             <h6 style="color:var(--text-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:1rem;">
                 <i class="bi bi-image me-1"></i> Foto Bukti <small style="text-transform:none;font-weight:400;">(opsional)</small>
             </h6>
-
             <div class="form-group">
                 <div class="upload-area" onclick="document.getElementById('foto_bukti').click()">
                     <i class="bi bi-cloud-upload"></i>
@@ -286,8 +241,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="upload-hint">Format: JPG, JPEG, PNG &bull; Maks. 5 MB</p>
                 </div>
                 <input type="file" id="foto_bukti" name="foto_bukti" accept=".jpg,.jpeg,.png">
-
-                <!-- Preview gambar yang dipilih -->
                 <div id="preview-container">
                     <img id="preview-img" src="" alt="Preview foto">
                     <p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem;" id="preview-name"></p>
@@ -296,7 +249,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <hr class="section-divider">
 
-            <!-- Tombol Aksi -->
             <div class="d-flex gap-3">
                 <a href="dashboard.php" class="btn-back">
                     <i class="bi bi-arrow-left"></i> Batal
@@ -305,7 +257,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-send-fill"></i> Kirim Laporan
                 </button>
             </div>
-
         </form>
     </div>
 </div>
@@ -318,7 +269,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Preview foto sebelum upload
 document.getElementById('foto_bukti').addEventListener('change', function () {
     const file = this.files[0];
     if (!file) return;
@@ -336,7 +286,6 @@ document.getElementById('foto_bukti').addEventListener('change', function () {
     reader.readAsDataURL(file);
 });
 
-// Drag & drop pada upload area
 const uploadArea = document.querySelector('.upload-area');
 uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.borderColor = '#818cf8'; });
 uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#334155'; });
@@ -352,6 +301,5 @@ uploadArea.addEventListener('drop', (e) => {
     }
 });
 </script>
-
 </body>
 </html>

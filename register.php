@@ -1,19 +1,12 @@
 <?php
-// ============================================
-// FILE: register.php
-// Deskripsi: Halaman pendaftaran user baru.
-// Semua akun yang mendaftar otomatis = 'user'.
-// ============================================
-
 session_start();
 
-// Jika sudah login, langsung ke dashboard
 if (isset($_SESSION['user_id'])) {
     header('Location: dashboard.php');
     exit;
 }
 
-require_once 'koneksi.php';
+require_once 'config/koneksi.php';
 
 $errors  = [];
 $success = false;
@@ -24,7 +17,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password']         ?? '');
     $konfirm  = trim($_POST['konfirm_password'] ?? '');
 
-    // ── Validasi ──
     if (empty($nama))     $errors[] = 'Nama lengkap wajib diisi.';
     if (empty($email))    $errors[] = 'Email wajib diisi.';
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Format email tidak valid.';
@@ -32,14 +24,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($password !== $konfirm) $errors[] = 'Konfirmasi password tidak cocok.';
 
     if (empty($errors)) {
-        // Cek apakah email sudah terdaftar
         $email_esc = mysqli_real_escape_string($koneksi, $email);
         $cek = mysqli_query($koneksi, "SELECT id FROM users WHERE email = '$email_esc' LIMIT 1");
 
         if (mysqli_num_rows($cek) > 0) {
             $errors[] = 'Email sudah terdaftar. Gunakan email lain atau langsung masuk.';
         } else {
-            // Hash password & simpan
             $pass_hash = password_hash($password, PASSWORD_DEFAULT);
             $nama_esc  = mysqli_real_escape_string($koneksi, $nama);
             $hash_esc  = mysqli_real_escape_string($koneksi, $pass_hash);
@@ -49,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (mysqli_query($koneksi, $sql)) {
                 $success = true;
-                // Auto-login setelah register
                 $new_id = mysqli_insert_id($koneksi);
                 $_SESSION['user_id'] = $new_id;
                 $_SESSION['nama']    = $nama;
@@ -73,11 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Akun | Lapor-Sekolah</title>
     <meta name="description" content="Buat akun baru di Lapor-Sekolah untuk mulai melaporkan kerusakan fasilitas.">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
     <style>
         :root {
             --primary:#4f46e5; --primary-light:#818cf8; --violet:#7c3aed;
@@ -106,13 +93,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-clip:text; text-decoration:none;
         }
         .brand span { -webkit-text-fill-color:var(--text-primary); }
-
-        .auth-container { flex:1; display:flex; align-items:center; justify-content:center; padding:2.5rem 1rem; position:relative; z-index:1; }
-        .auth-card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:2.5rem; width:100%; max-width:480px; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+        .auth-container { flex:1; display:flex; align-items:center; justify-content:center; padding:clamp(1.5rem, 5vw, 2.5rem) 1rem; position:relative; z-index:1; }
+        .auth-card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:clamp(1.5rem, 5vw, 2.5rem); width:100%; max-width:480px; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
         .auth-logo { width:56px; height:56px; background:linear-gradient(135deg,var(--violet),#c084fc); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; margin-bottom:1.5rem; box-shadow:0 8px 20px rgba(124,58,237,0.4); }
         .auth-title { font-size:1.6rem; font-weight:800; margin-bottom:0.4rem; }
         .auth-sub   { color:var(--text-muted); font-size:0.9rem; margin-bottom:2rem; }
-
         .form-group { margin-bottom:1.1rem; }
         .form-label-custom { display:block; font-weight:600; font-size:0.85rem; color:var(--primary-light); margin-bottom:0.4rem; }
         .input-wrapper { position:relative; }
@@ -127,13 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-control-custom:focus { border-color:var(--primary-light); box-shadow:0 0 0 3px rgba(79,70,229,0.15); background:rgba(79,70,229,0.05); }
         .toggle-pass { position:absolute; right:1rem; top:50%; transform:translateY(-50%); cursor:pointer; color:var(--text-muted); transition:color 0.2s; background:none; border:none; padding:0; }
         .toggle-pass:hover { color:var(--primary-light); }
-
-        /* Strength meter */
         .strength-bar { margin-top:0.5rem; }
         .strength-track { height:4px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
         .strength-fill  { height:100%; border-radius:2px; transition:width 0.3s, background 0.3s; width:0%; }
         .strength-label { font-size:0.72rem; margin-top:0.3rem; }
-
         .btn-submit {
             width:100%; background:linear-gradient(135deg,var(--violet),#c084fc);
             color:white; border:none; border-radius:10px;
@@ -142,25 +124,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition:all 0.25s; box-shadow:0 4px 15px rgba(124,58,237,0.35); margin-top:0.5rem;
         }
         .btn-submit:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(124,58,237,0.5); }
-
         .divider { display:flex; align-items:center; gap:1rem; margin:1.5rem 0; color:var(--text-muted); font-size:0.8rem; }
         .divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--border); }
-
         .link-login { text-align:center; font-size:0.9rem; color:var(--text-muted); }
         .link-login a { color:var(--primary-light); font-weight:600; text-decoration:none; }
         .link-login a:hover { text-decoration:underline; }
-
         .alert-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); border-radius:10px; padding:0.85rem 1rem; margin-bottom:1.25rem; color:#fca5a5; font-size:0.875rem; }
         .alert-error ul { margin:0.4rem 0 0; padding-left:1.2rem; }
         .alert-error li { margin-bottom:0.2rem; }
-
         footer { position:relative; z-index:1; background:var(--card-bg); border-top:1px solid var(--border); padding:1.25rem 0; text-align:center; color:var(--text-muted); font-size:0.8rem; }
     </style>
 </head>
 <body>
-
 <div class="bg-glow"></div>
-
 <nav>
     <div class="container">
         <a href="index.php" class="brand">
@@ -187,7 +163,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST" novalidate>
-            <!-- Nama -->
             <div class="form-group">
                 <label class="form-label-custom" for="nama">Nama Lengkap</label>
                 <div class="input-wrapper">
@@ -198,8 +173,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            maxlength="100" autocomplete="name">
                 </div>
             </div>
-
-            <!-- Email -->
             <div class="form-group">
                 <label class="form-label-custom" for="email">Alamat Email</label>
                 <div class="input-wrapper">
@@ -210,8 +183,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            autocomplete="email">
                 </div>
             </div>
-
-            <!-- Password -->
             <div class="form-group">
                 <label class="form-label-custom" for="password">Password</label>
                 <div class="input-wrapper">
@@ -224,14 +195,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="bi bi-eye-fill" id="eye1"></i>
                     </button>
                 </div>
-                <!-- Strength meter -->
                 <div class="strength-bar">
                     <div class="strength-track"><div class="strength-fill" id="strengthFill"></div></div>
                     <div class="strength-label" id="strengthLabel" style="color:var(--text-muted);"></div>
                 </div>
             </div>
-
-            <!-- Konfirmasi Password -->
             <div class="form-group">
                 <label class="form-label-custom" for="konfirm_password">Konfirmasi Password</label>
                 <div class="input-wrapper">
@@ -244,7 +212,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </div>
             </div>
-
             <button type="submit" class="btn-submit">
                 <i class="bi bi-person-check-fill"></i> Buat Akun Sekarang
             </button>
@@ -271,7 +238,6 @@ function togglePass(inputId, iconId) {
     input.type    = visible ? 'password' : 'text';
     icon.className = visible ? 'bi bi-eye-fill' : 'bi bi-eye-slash-fill';
 }
-
 function checkStrength(val) {
     const fill  = document.getElementById('strengthFill');
     const label = document.getElementById('strengthLabel');
@@ -281,7 +247,6 @@ function checkStrength(val) {
     if (/[A-Z]/.test(val)) score++;
     if (/[0-9]/.test(val)) score++;
     if (/[^A-Za-z0-9]/.test(val)) score++;
-
     const levels = [
         { pct: 0,   color: '',        text: '' },
         { pct: 20,  color: '#ef4444', text: '😰 Sangat Lemah' },
@@ -297,6 +262,5 @@ function checkStrength(val) {
     label.textContent     = lv.text;
 }
 </script>
-
 </body>
 </html>

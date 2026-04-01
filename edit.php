@@ -1,21 +1,13 @@
 <?php
-// ============================================
-// FILE: edit.php
-// Deskripsi: Admin meninjau laporan (read-only)
-// dan mengubah status laporan.
-// ============================================
-
 session_start();
-require_once 'koneksi.php';
-require_once 'auth_check.php'; // Guard ghost session terpusat
+require_once 'config/koneksi.php';
+require_once 'config/auth_check.php';
 
-// ── GUARD 1: Harus admin ──
 if ($_SESSION['role'] !== 'admin') {
     header('Location: dashboard.php');
     exit;
 }
 
-// ── GUARD 2: Parameter ID wajib ada dan numerik ──
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header('Location: dashboard.php');
     exit;
@@ -23,7 +15,6 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 
 $id = (int) $_GET['id'];
 
-// ── GUARD 3: Ambil data laporan, pastikan ada di DB ──
 $sql_select = "SELECT * FROM laporan_kerusakan WHERE id = $id LIMIT 1";
 $res_laporan = mysqli_query($koneksi, $sql_select);
 
@@ -34,21 +25,15 @@ if (!$res_laporan || mysqli_num_rows($res_laporan) === 0) {
 
 $laporan = mysqli_fetch_assoc($res_laporan);
 
-// ── GUARD 4: Tolak akses jika laporan milik user yang sudah dihapus ──
-// user_id NULL artinya akun pelapor sudah dihapus dari tabel users.
-// Akses ditolak agar tidak ada crash saat merender data relasi NULL.
 if (is_null($laporan['user_id'])) {
     header('Location: dashboard.php?pesan=laporan_terkunci');
     exit;
 }
 
-// ── Semua guard lolos — proses POST jika ada ──
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
     $status = trim($_POST['status'] ?? '');
-    // Ambil catatan admin (boleh kosong)
     $catatan_admin = trim($_POST['catatan_admin'] ?? '');
 
     if (!in_array($status, ['Menunggu', 'Diproses', 'Selesai'])) {
@@ -56,12 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        // Gunakan Prepared Statement untuk keamanan penuh
         $stmt = mysqli_prepare(
             $koneksi,
             "UPDATE laporan_kerusakan SET status = ?, catatan_admin = ? WHERE id = ?"
         );
-        // s = string, s = string, i = integer
         mysqli_stmt_bind_param($stmt, 'ssi', $status, $catatan_admin, $id);
 
         if (mysqli_stmt_execute($stmt)) {
@@ -73,16 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_close($stmt);
         }
     }
-
-    // Sinkronkan ke $laporan agar form tetap menampilkan nilai POST
     $laporan['status']        = $status;
     $laporan['catatan_admin'] = $catatan_admin;
 }
-
-// ═══════════════════════════════════════════
-// SEMUA LOGIKA PHP SELESAI DI SINI.
-// HTML baru dimulai di bawah — TIDAK ada header() setelah ini.
-// ═══════════════════════════════════════════
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -91,11 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tinjau Laporan #<?= $id ?> | Lapor-Sekolah</title>
     <meta name="description" content="Admin meninjau dan memperbarui status laporan kerusakan fasilitas.">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
     <style>
         :root {
             --primary: #4f46e5;
@@ -108,7 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --text-primary: #f1f5f9;
             --text-muted: #94a3b8;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Inter', sans-serif;
@@ -118,8 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             flex-direction: column;
         }
-
-        /* ── Navbar ── */
         .navbar-custom {
             background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(12px);
@@ -154,8 +125,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: all 0.2s;
         }
         .btn-back-nav:hover { color: var(--text-primary); background: rgba(255,255,255,0.09); }
-
-        /* ── Page Header ── */
         .page-header {
             background: linear-gradient(135deg, #1c1f3a, #252145, #1c1f3a);
             border-bottom: 1px solid var(--border);
@@ -172,7 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 radial-gradient(circle at 80% 50%, rgba(124,58,237,0.08), transparent 55%);
         }
         .page-header .container { position: relative; z-index: 1; }
-
         .page-icon {
             width: 48px; height: 48px;
             background: rgba(129,140,248,0.15);
@@ -201,19 +169,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 0.8rem;
             font-weight: 700;
         }
-
-        /* ── Form Card ── */
         .main-content { flex: 1; padding: 2rem 0; }
         .form-card {
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 2rem;
+            padding: clamp(1.25rem, 4vw, 2rem);
             max-width: 760px;
             margin: 0 auto;
         }
-
-        /* ── Form Elements ── */
         .form-section-label {
             font-size: 0.72rem;
             font-weight: 700;
@@ -232,8 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 0.4rem;
         }
         .form-group { margin-bottom: 1.1rem; }
-
-        /* Read-only fields */
         .form-control-readonly {
             width: 100%;
             background: rgba(255,255,255,0.025);
@@ -247,8 +209,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             user-select: none;
             line-height: 1.6;
         }
-
-        /* Editable select */
         .form-select-custom {
             width: 100%;
             background: rgba(255,255,255,0.05);
@@ -268,8 +228,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: rgba(79,70,229,0.05);
         }
         .form-select-custom option { background: var(--card-bg); color: var(--text-primary); }
-
-        /* Editable textarea */
         .form-control-custom {
             width: 100%;
             background: rgba(255,255,255,0.05);
@@ -288,8 +246,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
             background: rgba(79,70,229,0.05);
         }
-
-        /* Alert error */
         .alert-error {
             background: rgba(239,68,68,0.1);
             border: 1px solid rgba(239,68,68,0.3);
@@ -303,8 +259,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 0.6rem;
         }
         .alert-error i { flex-shrink: 0; margin-top: 0.1rem; }
-
-        /* Read-only box wrapper */
         .readonly-box {
             background: rgba(245,158,11,0.05);
             border: 1px solid rgba(245,158,11,0.18);
@@ -323,15 +277,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 0.4rem;
         }
-
-        /* Divider */
         .section-divider {
             border: none;
             border-top: 1px solid var(--border);
             margin: 1.5rem 0;
         }
-
-        /* Buttons */
         .btn-submit {
             background: linear-gradient(135deg, var(--primary), var(--violet));
             color: white;
@@ -363,8 +313,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: all 0.2s;
         }
         .btn-back:hover { color: var(--text-primary); background: rgba(255,255,255,0.09); }
-
-        /* Footer */
         footer {
             background: var(--card-bg);
             border-top: 1px solid var(--border);
@@ -376,8 +324,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-
-<!-- ── NAVBAR ── -->
 <nav class="navbar-custom">
     <div class="container d-flex align-items-center justify-content-between">
         <a class="navbar-brand-custom" href="dashboard.php">
@@ -389,7 +335,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </nav>
 
-<!-- ── PAGE HEADER ── -->
 <div class="page-header">
     <div class="container">
         <div class="d-flex align-items-center gap-3">
@@ -404,11 +349,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<!-- ── MAIN CONTENT ── -->
 <main class="main-content">
     <div class="container">
         <div class="form-card">
-
             <?php if (!empty($errors)): ?>
             <div class="alert-error">
                 <i class="bi bi-exclamation-triangle-fill"></i>
@@ -424,30 +367,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST" novalidate>
-
-                <!-- ══ DATA PELAPOR (READ-ONLY) ══ -->
                 <div class="readonly-box">
                     <div class="readonly-box-label">
                         <i class="bi bi-lock-fill"></i> Data Asli Pelapor — Read Only
                     </div>
-
                     <div class="form-group">
                         <label class="form-label-custom">Nama Pelapor</label>
                         <div class="form-control-readonly"><?= htmlspecialchars($laporan['nama_pelapor'] ?? '—') ?></div>
                     </div>
-
                     <div class="form-group">
                         <label class="form-label-custom">Fasilitas yang Rusak</label>
                         <div class="form-control-readonly"><?= htmlspecialchars($laporan['fasilitas'] ?? '—') ?></div>
                     </div>
-
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label-custom">Deskripsi Kerusakan</label>
                         <div class="form-control-readonly" style="min-height:90px;"><?= htmlspecialchars($laporan['deskripsi'] ?? '—') ?></div>
                     </div>
                 </div>
 
-                <!-- Preview foto jika ada -->
                 <?php if (!empty($laporan['foto_bukti']) && file_exists('uploads/' . $laporan['foto_bukti'])): ?>
                 <div style="margin-bottom:1.5rem;">
                     <label class="form-label-custom"><i class="bi bi-image me-1"></i>Foto Bukti</label>
@@ -461,11 +398,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <hr class="section-divider">
 
-                <!-- ══ STATUS + CATATAN ADMIN ══ -->
                 <div class="form-section-label" style="color:var(--primary-light);">
                     <i class="bi bi-arrow-repeat"></i> Perbarui Status &amp; Catatan
                 </div>
-
                 <div class="form-group">
                     <label class="form-label-custom" for="status">Status Penanganan</label>
                     <select id="status" name="status" class="form-select-custom">
@@ -474,7 +409,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <option value="Selesai"  <?= ($laporan['status'] === 'Selesai')  ? 'selected' : '' ?>>✅ Selesai Diperbaiki</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label-custom" for="catatan_admin">
                         <i class="bi bi-chat-left-text me-1"></i>Catatan Admin
@@ -501,13 +435,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="bi bi-check2-circle"></i> Simpan Status
                     </button>
                 </div>
-
             </form>
         </div>
     </div>
 </main>
 
-<!-- ── FOOTER ── -->
 <footer>
     <div class="container">
         <p>
@@ -518,6 +450,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>

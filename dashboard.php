@@ -1,30 +1,19 @@
 <?php
-// ============================================
-// FILE: dashboard.php
-// Deskripsi: Halaman utama setelah login.
-// Admin: lihat semua laporan + Edit/Hapus/Status
-// User : lihat laporan miliknya sendiri saja
-// ============================================
-
 session_start();
-require_once 'koneksi.php';
-require_once 'auth_check.php'; // ← Guard ghost session terpusat
+require_once 'config/koneksi.php';
+require_once 'config/auth_check.php';
 
-// Ambil variabel session
 $session_id   = (int) $_SESSION['user_id'];
 $session_nama = $_SESSION['nama'];
-$session_role = $_SESSION['role']; // 'admin' atau 'user'
+$session_role = $_SESSION['role'];
 $is_admin     = ($session_role === 'admin');
 
-// ── Query laporan berdasarkan role ──────────
 if ($is_admin) {
-    // Admin melihat SEMUA laporan dari semua user
     $query = "SELECT lk.*, u.nama AS nama_user
               FROM laporan_kerusakan lk
               LEFT JOIN users u ON lk.user_id = u.id
               ORDER BY lk.tanggal_lapor DESC";
 } else {
-    // User biasa hanya melihat laporan MILIKNYA
     $query = "SELECT lk.*, u.nama AS nama_user
               FROM laporan_kerusakan lk
               LEFT JOIN users u ON lk.user_id = u.id
@@ -34,7 +23,6 @@ if ($is_admin) {
 
 $result = mysqli_query($koneksi, $query);
 
-// ── Pesan notifikasi dari redirect ──────────
 $pesan = '';
 if (isset($_GET['pesan'])) {
     $map = [
@@ -52,7 +40,6 @@ if (isset($_GET['pesan'])) {
     }
 }
 
-// ── Hitung statistik ────────────────────────
 $total = mysqli_num_rows($result);
 mysqli_data_seek($result, 0);
 $menunggu = $diproses = $selesai = 0;
@@ -70,12 +57,10 @@ mysqli_data_seek($result, 0);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Lapor-Sekolah</title>
     <meta name="description" content="Dashboard Lapor-Sekolah — kelola laporan kerusakan fasilitas.">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-
     <style>
         :root {
             --primary:#4f46e5; --primary-dark:#3730a3; --primary-light:#818cf8;
@@ -85,8 +70,6 @@ mysqli_data_seek($result, 0);
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Inter',sans-serif; background:var(--dark-bg); color:var(--text-primary); min-height:100vh; }
-
-        /* ===== NAVBAR ===== */
         .navbar-custom {
             background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
             border-bottom:1px solid var(--border); padding:0.85rem 0;
@@ -99,8 +82,6 @@ mysqli_data_seek($result, 0);
             background-clip:text; text-decoration:none;
         }
         .navbar-brand-custom span { -webkit-text-fill-color:var(--text-primary); }
-
-        /* User info pill */
         .user-pill {
             display:inline-flex; align-items:center; gap:0.5rem;
             background:rgba(255,255,255,0.05);
@@ -133,8 +114,6 @@ mysqli_data_seek($result, 0);
             transition:all 0.2s;
         }
         .btn-logout:hover { background:rgba(239,68,68,0.2); color:#fecaca; }
-
-        /* ===== HERO ===== */
         .hero-section {
             background:linear-gradient(135deg,#1e1b4b,#312e81,#1e1b4b);
             border-bottom:1px solid var(--border); padding:2.5rem 0;
@@ -148,16 +127,12 @@ mysqli_data_seek($result, 0);
         .hero-section .container { position:relative; z-index:1; }
         .hero-title  { font-size:clamp(1.5rem,3vw,2rem); font-weight:800; margin-bottom:0.5rem; }
         .hero-sub    { color:var(--text-muted); font-size:0.9rem; }
-
-        /* Admin badge strip */
         .admin-strip {
             background:rgba(192,132,252,0.1); border:1px solid rgba(192,132,252,0.25);
             border-radius:10px; padding:0.6rem 1rem; margin-bottom:1rem;
             font-size:0.85rem; color:#c084fc; font-weight:600;
             display:inline-flex; align-items:center; gap:0.5rem;
         }
-
-        /* ===== STAT CARDS ===== */
         .stat-card {
             background:rgba(255,255,255,0.04); border:1px solid var(--border);
             border-radius:12px; padding:1rem 1.25rem; text-align:center;
@@ -165,8 +140,6 @@ mysqli_data_seek($result, 0);
         }
         .stat-number { font-size:1.8rem; font-weight:800; line-height:1; margin-bottom:0.25rem; }
         .stat-label  { font-size:0.75rem; color:var(--text-muted); font-weight:500; }
-
-        /* ===== MAIN ===== */
         .main-content { padding:2rem 0; }
         .table-card   { background:var(--card-bg); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
         .table-card-header {
@@ -175,7 +148,6 @@ mysqli_data_seek($result, 0);
             flex-wrap:wrap; gap:0.75rem;
         }
         .table-card-header h5 { font-weight:700; font-size:1rem; margin:0; }
-
         .table-responsive { overflow-x:auto; }
         .table-custom { width:100%; border-collapse:collapse; font-size:0.875rem; }
         .table-custom thead th {
@@ -188,12 +160,10 @@ mysqli_data_seek($result, 0);
         .table-custom tbody tr:hover { background:rgba(79,70,229,0.07); }
         .table-custom tbody td { padding:1rem 1.25rem; vertical-align:middle; color:var(--text-primary); }
         .text-muted-custom { color:var(--text-muted); font-size:0.78rem; }
-
         .badge-status { display:inline-flex; align-items:center; gap:0.35rem; padding:0.3rem 0.75rem; border-radius:50px; font-size:0.72rem; font-weight:700; }
         .badge-menunggu { background:rgba(245,158,11,0.15); color:#fcd34d; border:1px solid rgba(245,158,11,0.3); }
         .badge-diproses { background:rgba(59,130,246,0.15);  color:#93c5fd; border:1px solid rgba(59,130,246,0.3); }
         .badge-selesai  { background:rgba(16,185,129,0.15);  color:#6ee7b7; border:1px solid rgba(16,185,129,0.3); }
-
         .foto-thumb {
             width:50px; height:50px; object-fit:cover; border-radius:8px;
             border:2px solid var(--border); cursor:pointer;
@@ -206,7 +176,6 @@ mysqli_data_seek($result, 0);
             display:flex; align-items:center; justify-content:center;
             color:var(--text-muted); font-size:1rem;
         }
-
         .btn-action { border:none; border-radius:8px; padding:0.35rem 0.75rem; font-size:0.78rem; font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem; transition:all 0.2s; }
         .btn-edit   { background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.3); }
         .btn-edit:hover  { background:rgba(59,130,246,0.3); color:#bfdbfe; }
@@ -219,21 +188,15 @@ mysqli_data_seek($result, 0);
             transition:all 0.2s; box-shadow:0 4px 15px rgba(79,70,229,0.3);
         }
         .btn-tambah:hover { color:white; transform:translateY(-2px); box-shadow:0 6px 20px rgba(79,70,229,0.5); }
-
         .row-num { background:rgba(79,70,229,0.15); color:var(--primary-light); border-radius:6px; padding:0.15rem 0.5rem; font-size:0.72rem; font-weight:700; }
-
         .empty-state { padding:4rem 2rem; text-align:center; color:var(--text-muted); }
         .empty-state i { font-size:3rem; margin-bottom:1rem; opacity:0.4; display:block; }
-
-        /* Modal foto */
         #fotoModal .modal-content { background:var(--card-bg); border:1px solid var(--border); border-radius:16px; }
         #fotoModal .modal-header  { border-bottom:1px solid var(--border); }
         #fotoModal .modal-title   { color:var(--text-primary); font-weight:600; }
         #fotoModal .btn-close     { filter:invert(1); }
         #modalFotoImg             { max-width:100%; border-radius:10px; }
-
         footer { background:var(--card-bg); border-top:1px solid var(--border); padding:1.5rem 0; text-align:center; color:var(--text-muted); font-size:0.85rem; }
-
         @media(max-width:768px) {
             .hero-section { padding:1.5rem 0; }
             .table-custom thead th, .table-custom tbody td { padding:0.65rem 0.9rem; }
@@ -241,16 +204,12 @@ mysqli_data_seek($result, 0);
     </style>
 </head>
 <body>
-
-<!-- ===== NAVBAR ===== -->
 <nav class="navbar-custom">
     <div class="container d-flex align-items-center justify-content-between gap-3 flex-wrap">
         <a class="navbar-brand-custom" href="dashboard.php">
             <i class="bi bi-shield-exclamation me-1" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
-
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <!-- Link Kelola User (Admin Only) -->
             <?php if ($is_admin): ?>
             <a href="kelola_user.php" style="
                 background:rgba(192,132,252,0.1); color:#c084fc;
@@ -260,7 +219,6 @@ mysqli_data_seek($result, 0);
                 <i class="bi bi-people-fill"></i> Kelola User
             </a>
             <?php endif; ?>
-            <!-- User info -->
             <div class="user-pill">
                 <div class="avatar"><?= mb_strtoupper(mb_substr($session_nama, 0, 1)) ?></div>
                 <span><?= htmlspecialchars(mb_substr($session_nama, 0, 18)) ?></span>
@@ -270,7 +228,6 @@ mysqli_data_seek($result, 0);
                     <span class="role-badge-user">User</span>
                 <?php endif; ?>
             </div>
-            <!-- Logout -->
             <a href="logout.php" class="btn-logout">
                 <i class="bi bi-box-arrow-right"></i> Keluar
             </a>
@@ -278,7 +235,6 @@ mysqli_data_seek($result, 0);
     </div>
 </nav>
 
-<!-- ===== HERO ===== -->
 <section class="hero-section">
     <div class="container">
         <div class="row align-items-center g-4">
@@ -333,11 +289,9 @@ mysqli_data_seek($result, 0);
     </div>
 </section>
 
-<!-- ===== MAIN CONTENT ===== -->
 <main class="main-content">
     <div class="container">
         <?= $pesan ?>
-
         <div class="table-card">
             <div class="table-card-header">
                 <h5>
@@ -387,12 +341,9 @@ mysqli_data_seek($result, 0);
                         ?>
                         <tr>
                             <td><span class="row-num"><?= $no++ ?></span></td>
-
                             <?php if ($is_admin): ?>
                             <td>
                                 <?php
-                                // Jika user sudah dihapus, nama_pelapor tetap ada.
-                                // Tampilkan akun user sebagai 'Anonim' jika user_id NULL.
                                 $nama_pelapor_display = htmlspecialchars($laporan['nama_pelapor'] ?? 'Anonim');
                                 if (empty($laporan['nama_pelapor'])) {
                                     $nama_pelapor_display = '<em style="color:var(--text-muted);">Anonim</em>';
@@ -406,7 +357,6 @@ mysqli_data_seek($result, 0);
                                 <?php endif; ?>
                             </td>
                             <?php endif; ?>
-
                             <td><?= htmlspecialchars($laporan['fasilitas']) ?></td>
                             <td>
                                 <span title="<?= htmlspecialchars($laporan['deskripsi']) ?>">
@@ -438,12 +388,10 @@ mysqli_data_seek($result, 0);
                                 <div class="d-flex gap-1 flex-wrap">
                                     <?php if ($is_admin): ?>
                                     <?php if (is_null($laporan['user_id'])): ?>
-                                        <!-- user_id NULL = user dihapus → laporan terkunci, tidak bisa ditinjau -->
                                         <span class="btn-action" style="background:rgba(100,116,139,0.15);color:#64748b;border:1px solid rgba(100,116,139,0.3);cursor:not-allowed;" title="Laporan ini milik akun yang sudah dihapus">
                                             <i class="bi bi-lock-fill"></i> Terkunci
                                         </span>
                                     <?php else: ?>
-                                        <!-- user_id ada → tampilkan Tinjau & Hapus -->
                                         <a href="edit.php?id=<?= $laporan['id'] ?>" class="btn-action btn-edit">
                                             <i class="bi bi-eye-fill"></i> Tinjau
                                         </a>
@@ -455,7 +403,6 @@ mysqli_data_seek($result, 0);
                                         </button>
                                     <?php endif; ?>
                                     <?php else: ?>
-                                    <!-- User: tombol Detail Laporan -->
                                     <a href="detail_laporan.php?id=<?= $laporan['id'] ?>"
                                        class="btn-action btn-edit"
                                        style="background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.25);">
@@ -471,11 +418,9 @@ mysqli_data_seek($result, 0);
                 </div>
             <?php endif; ?>
         </div>
-
     </div>
 </main>
 
-<!-- ===== MODAL FOTO ===== -->
 <div class="modal fade" id="fotoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -490,7 +435,6 @@ mysqli_data_seek($result, 0);
     </div>
 </div>
 
-<!-- ===== FOOTER ===== -->
 <footer>
     <div class="container">
         <p><i class="bi bi-shield-check me-1" style="color:var(--primary-light);"></i>
@@ -499,12 +443,9 @@ mysqli_data_seek($result, 0);
     </div>
 </footer>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-// ── 1. Foto Modal ──
 const fotoModal = document.getElementById('fotoModal');
 fotoModal.addEventListener('show.bs.modal', function(e) {
     const t = e.relatedTarget;
@@ -512,14 +453,12 @@ fotoModal.addEventListener('show.bs.modal', function(e) {
     document.getElementById('modalFotoLabel').textContent = t.getAttribute('data-nama');
 });
 
-// ── 2. Auto-hide alert ──
 setTimeout(() => {
     document.querySelectorAll('.alert').forEach(el => {
         try { new bootstrap.Alert(el).close(); } catch(e) {}
     });
 }, 4500);
 
-// ── 3. Konfirmasi Hapus SweetAlert2 (Admin Only) ──
 document.querySelectorAll('.tombol-hapus').forEach(function(btn) {
     btn.addEventListener('click', function() {
         const id   = this.getAttribute('data-id');
@@ -550,7 +489,6 @@ document.querySelectorAll('.tombol-hapus').forEach(function(btn) {
     });
 });
 </script>
-
 <style>
 .swal-popup-custom { border:1px solid #334155!important; border-radius:16px!important; font-family:'Inter',sans-serif!important; box-shadow:0 20px 60px rgba(0,0,0,0.6)!important; }
 .swal-title-custom { font-size:1.25rem!important; font-weight:800!important; color:#f1f5f9!important; }
@@ -560,6 +498,5 @@ document.querySelectorAll('.tombol-hapus').forEach(function(btn) {
 .swal-btn-cancel:hover  { background:rgba(255,255,255,0.12)!important; color:#f1f5f9!important; }
 .swal2-icon.swal2-warning { border-color:#f59e0b!important; }
 </style>
-
 </body>
 </html>

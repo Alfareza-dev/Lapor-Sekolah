@@ -1,14 +1,7 @@
 <?php
-// ============================================
-// FILE: hapus.php
-// Deskripsi: Proses DELETE data laporan dari
-// database dan hapus file foto dari server
-// ============================================
-
 session_start();
-require_once 'koneksi.php';
+require_once 'config/koneksi.php';
 
-// ── GUARD: wajib login DAN harus admin ──
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -18,7 +11,6 @@ if ($_SESSION['role'] !== 'admin') {
     exit;
 }
 
-// ── 1. Validasi parameter ID ──
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header('Location: index.php');
     exit;
@@ -26,12 +18,10 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 
 $id = (int) $_GET['id'];
 
-// ── 2. Ambil data laporan untuk mendapatkan nama file foto ──
 $sql_select = "SELECT foto_bukti FROM laporan_kerusakan WHERE id = $id LIMIT 1";
 $result     = mysqli_query($koneksi, $sql_select);
 
 if (mysqli_num_rows($result) === 0) {
-    // ID tidak ditemukan, kembali ke halaman utama
     header('Location: dashboard.php');
     exit;
 }
@@ -39,12 +29,9 @@ if (mysqli_num_rows($result) === 0) {
 $laporan   = mysqli_fetch_assoc($result);
 $foto_file = $laporan['foto_bukti'];
 
-// ── 3. Hapus data dari database ──
 $sql_hapus = "DELETE FROM laporan_kerusakan WHERE id = $id";
 
 if (mysqli_query($koneksi, $sql_hapus)) {
-
-    // ── 4. Hapus file foto dari server jika ada ──
     if (!empty($foto_file)) {
         $foto_path = 'uploads/' . $foto_file;
         if (file_exists($foto_path)) {
@@ -52,12 +39,10 @@ if (mysqli_query($koneksi, $sql_hapus)) {
         }
     }
 
-    // Redirect ke index dengan pesan sukses
     header('Location: dashboard.php?pesan=hapus_sukses');
     exit;
 
 } else {
-    // Jika query gagal, tampilkan pesan error sederhana
     die('
     <!DOCTYPE html><html lang="id"><head>
     <meta charset="UTF-8"><title>Error</title>

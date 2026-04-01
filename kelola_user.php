@@ -1,15 +1,8 @@
 <?php
-// ============================================
-// FILE: kelola_user.php
-// Deskripsi: Halaman admin untuk melihat dan
-// menghapus akun user terdaftar.
-// ============================================
-
 session_start();
-require_once 'koneksi.php';
-require_once 'auth_check.php'; // ← Guard ghost session terpusat
+require_once 'config/koneksi.php';
+require_once 'config/auth_check.php';
 
-// ── GUARD tambahan: harus admin ──
 if ($_SESSION['role'] !== 'admin') {
     header('Location: dashboard.php');
     exit;
@@ -19,7 +12,6 @@ $admin_id    = (int) $_SESSION['user_id'];
 $admin_nama  = $_SESSION['nama'];
 $admin_role  = $_SESSION['role'];
 
-// ── Ambil semua user beserta jumlah laporannya ──
 $query = "SELECT u.id, u.nama, u.email, u.role, u.created_at,
                  COUNT(lk.id) AS jumlah_laporan
           FROM users u
@@ -30,7 +22,6 @@ $query = "SELECT u.id, u.nama, u.email, u.role, u.created_at,
 $result = mysqli_query($koneksi, $query);
 $total_user = mysqli_num_rows($result);
 
-// ── Pesan redirect ──
 $pesan = '';
 if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
     $pesan = '<div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -47,12 +38,10 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelola User | Lapor-Sekolah Admin</title>
     <meta name="description" content="Panel admin untuk mengelola akun user yang terdaftar di Lapor-Sekolah.">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-
     <style>
         :root {
             --primary:#4f46e5; --primary-light:#818cf8;
@@ -62,8 +51,6 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Inter',sans-serif; background:var(--dark-bg); color:var(--text-primary); min-height:100vh; }
-
-        /* ── Navbar ── */
         .navbar-custom {
             background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
             border-bottom:1px solid var(--border); padding:0.85rem 0;
@@ -84,8 +71,6 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
             transition:all 0.2s;
         }
         .btn-back-nav:hover { color:var(--text-primary); background:rgba(255,255,255,0.08); }
-
-        /* ── Page Header ── */
         .page-header {
             background:linear-gradient(135deg,#1e1b4b,#2e1065,#1e1b4b);
             border-bottom:1px solid var(--border); padding:2rem 0;
@@ -106,16 +91,12 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
         }
         .page-title { font-size:1.6rem; font-weight:800; margin:0; }
         .page-sub   { color:var(--text-muted); font-size:0.875rem; margin:0.3rem 0 0; }
-
-        /* ── Stat Summary ── */
         .stat-inline {
             display:inline-flex; align-items:center; gap:0.5rem;
             background:rgba(192,132,252,0.1); border:1px solid rgba(192,132,252,0.25);
             color:var(--pink); border-radius:10px;
             padding:0.5rem 1rem; font-size:0.85rem; font-weight:600;
         }
-
-        /* ── Main ── */
         .main-content { padding:2rem 0; }
         .table-card   { background:var(--card-bg); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
         .table-card-header {
@@ -124,7 +105,6 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
             flex-wrap:wrap; gap:0.75rem;
         }
         .table-card-header h5 { font-weight:700; font-size:1rem; margin:0; }
-
         .table-responsive { overflow-x:auto; }
         .table-custom { width:100%; border-collapse:collapse; font-size:0.875rem; }
         .table-custom thead th {
@@ -139,15 +119,11 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
         .table-custom tbody tr:hover { background:rgba(124,58,237,0.06); }
         .table-custom tbody td { padding:0.95rem 1.25rem; vertical-align:middle; color:var(--text-primary); }
         .text-muted-sm { color:var(--text-muted); font-size:0.78rem; }
-
-        /* Avatar inisial */
         .user-avatar {
             width:36px; height:36px; border-radius:10px;
             display:flex; align-items:center; justify-content:center;
             font-size:0.875rem; font-weight:800; color:white; flex-shrink:0;
         }
-
-        /* Role badges */
         .badge-role-admin {
             background:rgba(192,132,252,0.15); color:#c084fc;
             border:1px solid rgba(192,132,252,0.3);
@@ -160,8 +136,6 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
             padding:0.25rem 0.7rem; border-radius:50px;
             font-size:0.7rem; font-weight:700; text-transform:uppercase;
         }
-
-        /* Badge jumlah laporan */
         .badge-count {
             display:inline-flex; align-items:center; gap:0.3rem;
             background:rgba(79,70,229,0.12); color:var(--primary-light);
@@ -169,8 +143,6 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
             padding:0.2rem 0.6rem; border-radius:50px;
             font-size:0.75rem; font-weight:700;
         }
-
-        /* Tombol hapus */
         .btn-hapus-user {
             background:rgba(239,68,68,0.12); color:#fca5a5;
             border:1px solid rgba(239,68,68,0.25); border-radius:8px;
@@ -179,21 +151,15 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
             transition:all 0.2s;
         }
         .btn-hapus-user:hover { background:rgba(239,68,68,0.25); color:#fecaca; }
-
-        /* Self-row (admin row) styling */
         .self-row td { opacity:0.6; }
         .badge-self {
             background:rgba(16,185,129,0.12); color:#6ee7b7;
             border:1px solid rgba(16,185,129,0.25);
             padding:0.2rem 0.6rem; border-radius:50px; font-size:0.7rem; font-weight:700;
         }
-
         .row-num { background:rgba(124,58,237,0.15); color:var(--pink); border-radius:6px; padding:0.15rem 0.5rem; font-size:0.72rem; font-weight:700; }
-
         .empty-state { padding:4rem 2rem; text-align:center; color:var(--text-muted); }
         .empty-state i { font-size:3rem; margin-bottom:1rem; opacity:0.4; display:block; }
-
-        /* Info Box */
         .info-box {
             background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.2);
             border-radius:12px; padding:0.9rem 1.25rem; margin-bottom:1.5rem;
@@ -201,13 +167,10 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
             display:flex; align-items:flex-start; gap:0.75rem;
         }
         .info-box i { font-size:1.1rem; flex-shrink:0; margin-top:0.1rem; }
-
         footer { background:var(--card-bg); border-top:1px solid var(--border); padding:1.5rem 0; text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:0; }
     </style>
 </head>
 <body>
-
-<!-- ── NAVBAR ── -->
 <nav class="navbar-custom">
     <div class="container d-flex align-items-center justify-content-between gap-2 flex-wrap">
         <a class="navbar-brand-custom" href="dashboard.php">
@@ -225,7 +188,6 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
     </div>
 </nav>
 
-<!-- ── PAGE HEADER ── -->
 <div class="page-header">
     <div class="container">
         <div class="d-flex align-items-center gap-3">
@@ -244,13 +206,9 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
     </div>
 </div>
 
-<!-- ── MAIN ── -->
 <main class="main-content">
     <div class="container">
-
         <?= $pesan ?>
-
-        <!-- Info Box -->
         <div class="info-box">
             <i class="bi bi-info-circle-fill"></i>
             <div>
@@ -299,7 +257,6 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
                     while ($user = mysqli_fetch_assoc($result)):
                         $is_self   = ($user['id'] == $admin_id);
                         $is_admin_row = ($user['role'] === 'admin');
-                        // Warna avatar berdasarkan role
                         $avatar_style = $is_admin_row
                             ? 'background:linear-gradient(135deg,#7c3aed,#c084fc);'
                             : 'background:linear-gradient(135deg,#4f46e5,#818cf8);';
@@ -344,7 +301,6 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
                         </td>
                         <td>
                             <?php if ($is_self): ?>
-                                <!-- Tidak bisa hapus diri sendiri -->
                                 <span style="color:var(--text-muted);font-size:0.78rem;">
                                     <i class="bi bi-lock-fill me-1"></i>Akun Aktif
                                 </span>
@@ -366,7 +322,6 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
             </div>
             <?php endif; ?>
         </div>
-
     </div>
 </main>
 
@@ -379,19 +334,15 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
     </div>
 </footer>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-// Auto-hide alert
 setTimeout(() => {
     document.querySelectorAll('.alert').forEach(el => {
         try { new bootstrap.Alert(el).close(); } catch(e) {}
     });
 }, 5000);
 
-// ── Konfirmasi Hapus User ──
 document.querySelectorAll('.tombol-hapus-user').forEach(function(btn) {
     btn.addEventListener('click', function() {
         const id      = this.getAttribute('data-id');
@@ -399,7 +350,6 @@ document.querySelectorAll('.tombol-hapus-user').forEach(function(btn) {
         const email   = this.getAttribute('data-email');
         const laporan = parseInt(this.getAttribute('data-laporan'));
 
-        // Pesan berbeda tergantung punya laporan atau tidak
         const warningMsg = laporan > 0
             ? `<span style="font-size:0.83rem;color:#fcd34d;">
                    ⚠️ User ini memiliki <strong>${laporan} laporan</strong>.
@@ -434,7 +384,6 @@ document.querySelectorAll('.tombol-hapus-user').forEach(function(btn) {
     });
 });
 </script>
-
 <style>
 .swal-popup-custom { border:1px solid #334155!important; border-radius:16px!important; font-family:'Inter',sans-serif!important; box-shadow:0 20px 60px rgba(0,0,0,0.6)!important; }
 .swal-title-custom { font-size:1.2rem!important; font-weight:800!important; color:#f1f5f9!important; }
@@ -444,6 +393,5 @@ document.querySelectorAll('.tombol-hapus-user').forEach(function(btn) {
 .swal-btn-cancel:hover  { background:rgba(255,255,255,0.12)!important; color:#f1f5f9!important; }
 .swal2-icon.swal2-warning { border-color:#f59e0b!important; }
 </style>
-
 </body>
 </html>

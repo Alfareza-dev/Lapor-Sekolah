@@ -46,6 +46,8 @@ if (isset($_GET['pesan'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
     <style>
         /* ===== DESIGN SYSTEM ===== */
@@ -515,11 +517,12 @@ if (isset($_GET['pesan'])) {
                                         <a href="edit.php?id=<?= $laporan['id'] ?>" class="btn-action btn-edit">
                                             <i class="bi bi-pencil-fill"></i> Edit
                                         </a>
-                                        <a href="hapus.php?id=<?= $laporan['id'] ?>"
-                                           class="btn-action btn-hapus"
-                                           onclick="return confirm('⚠️ Yakin ingin menghapus laporan ini?\nData dan foto akan hilang permanen!')">
+                                        <button type="button"
+                                                class="btn-action btn-hapus tombol-hapus"
+                                                data-id="<?= $laporan['id'] ?>"
+                                                data-nama="<?= htmlspecialchars($laporan['fasilitas']) ?>">
                                             <i class="bi bi-trash-fill"></i> Hapus
-                                        </a>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -560,24 +563,124 @@ if (isset($_GET['pesan'])) {
 
 <!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-// Tampilkan foto di modal saat thumbnail diklik
+// ── 1. Tampilkan foto di modal saat thumbnail diklik ──
 const fotoModal = document.getElementById('fotoModal');
 fotoModal.addEventListener('show.bs.modal', function (event) {
     const trigger = event.relatedTarget;
-    document.getElementById('modalFotoImg').src   = trigger.getAttribute('data-src');
+    document.getElementById('modalFotoImg').src           = trigger.getAttribute('data-src');
     document.getElementById('modalFotoLabel').textContent = trigger.getAttribute('data-nama');
 });
 
-// Auto-hide alert setelah 4 detik
+// ── 2. Auto-hide alert Bootstrap setelah 4 detik ──
 setTimeout(() => {
     document.querySelectorAll('.alert').forEach(el => {
         const bsAlert = new bootstrap.Alert(el);
         bsAlert.close();
     });
 }, 4000);
+
+// ── 3. Konfirmasi Hapus dengan SweetAlert2 (Dark Mode) ──
+document.querySelectorAll('.tombol-hapus').forEach(function (tombol) {
+    tombol.addEventListener('click', function () {
+        const id       = this.getAttribute('data-id');
+        const namaFasilitas = this.getAttribute('data-nama');
+
+        Swal.fire({
+            // --- Konten ---
+            title: 'Hapus Laporan?',
+            html: `Kamu akan menghapus laporan untuk:<br><strong style="color:#f87171;">${namaFasilitas}</strong><br><br>
+                   <span style="font-size:0.85rem;color:#94a3b8;">Data dan foto bukti akan hilang secara permanen dan tidak bisa dikembalikan.</span>`,
+            icon: 'warning',
+
+            // --- Tombol ---
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-trash-fill"></i> Ya, Hapus!',
+            cancelButtonText:  '<i class="bi bi-x-lg"></i> Batal',
+            reverseButtons: true,
+
+            // --- Styling Dark Mode ──
+            background: '#1e293b',
+            color: '#f1f5f9',
+            iconColor: '#f59e0b',
+
+            customClass: {
+                popup:         'swal-popup-custom',
+                title:         'swal-title-custom',
+                confirmButton: 'swal-btn-confirm',
+                cancelButton:  'swal-btn-cancel',
+            },
+
+            // --- Efek visual ---
+            showClass:  { popup: 'swal2-show' },
+            hideClass:  { popup: 'swal2-hide' },
+            buttonsStyling: false,  // Nonaktifkan styling bawaan agar CSS custom aktif
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                // Arahkan ke hapus.php jika user tekan "Ya, Hapus!"
+                window.location.href = 'hapus.php?id=' + id;
+            }
+        });
+    });
+});
 </script>
+
+<style>
+/* ── Custom SweetAlert2 Dark Mode Styles ── */
+.swal-popup-custom {
+    border: 1px solid #334155 !important;
+    border-radius: 16px !important;
+    font-family: 'Inter', sans-serif !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+}
+.swal-title-custom {
+    font-size: 1.3rem !important;
+    font-weight: 800 !important;
+    color: #f1f5f9 !important;
+}
+.swal-btn-confirm {
+    background: linear-gradient(135deg, #dc2626, #991b1b) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.65rem 1.5rem !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    transition: all 0.2s !important;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4) !important;
+}
+.swal-btn-confirm:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.6) !important;
+}
+.swal-btn-cancel {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #94a3b8 !important;
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
+    padding: 0.65rem 1.5rem !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    transition: all 0.2s !important;
+}
+.swal-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #f1f5f9 !important;
+}
+/* Override warna icon SweetAlert2 agar cocok dengan dark mode */
+.swal2-icon.swal2-warning { border-color: #f59e0b !important; }
+</style>
 
 </body>
 </html>

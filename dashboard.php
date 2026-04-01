@@ -43,10 +43,11 @@ $result = mysqli_query($koneksi, $query);
 $pesan = '';
 if (isset($_GET['pesan'])) {
     $map = [
-        'tambah_sukses'  => ['success', '<i class="bi bi-check-circle-fill me-2"></i> Laporan berhasil ditambahkan!'],
-        'edit_sukses'    => ['info',    '<i class="bi bi-pencil-fill me-2"></i> Laporan berhasil diperbarui!'],
-        'hapus_sukses'   => ['warning', '<i class="bi bi-trash-fill me-2"></i> Laporan berhasil dihapus!'],
-        'register_sukses'=> ['success', '<i class="bi bi-person-check-fill me-2"></i> Akun berhasil dibuat! Selamat datang, ' . htmlspecialchars($session_nama) . '!'],
+        'tambah_sukses'    => ['success', '<i class="bi bi-check-circle-fill me-2"></i> Laporan berhasil ditambahkan!'],
+        'edit_sukses'      => ['info',    '<i class="bi bi-arrow-repeat me-2"></i> Status laporan berhasil diperbarui!'],
+        'hapus_sukses'     => ['warning', '<i class="bi bi-trash-fill me-2"></i> Laporan berhasil dihapus!'],
+        'hapus_user_sukses'=> ['warning', '<i class="bi bi-person-x-fill me-2"></i> Akun user berhasil dihapus. Laporan mereka tetap tersimpan sebagai Anonim.'],
+        'register_sukses'  => ['success', '<i class="bi bi-person-check-fill me-2"></i> Akun berhasil dibuat! Selamat datang, ' . htmlspecialchars($session_nama) . '!'],
     ];
     $key = $_GET['pesan'];
     if (isset($map[$key])) {
@@ -253,6 +254,16 @@ mysqli_data_seek($result, 0);
         </a>
 
         <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Link Kelola User (Admin Only) -->
+            <?php if ($is_admin): ?>
+            <a href="kelola_user.php" style="
+                background:rgba(192,132,252,0.1); color:#c084fc;
+                border:1px solid rgba(192,132,252,0.3); border-radius:8px;
+                padding:0.35rem 0.85rem; font-size:0.8rem; font-weight:600;
+                text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem; transition:all 0.2s;">
+                <i class="bi bi-people-fill"></i> Kelola User
+            </a>
+            <?php endif; ?>
             <!-- User info -->
             <div class="user-pill">
                 <div class="avatar"><?= mb_strtoupper(mb_substr($session_nama, 0, 1)) ?></div>
@@ -381,9 +392,19 @@ mysqli_data_seek($result, 0);
 
                             <?php if ($is_admin): ?>
                             <td>
-                                <strong style="font-size:0.85rem;"><?= htmlspecialchars($laporan['nama_pelapor']) ?></strong>
+                                <?php
+                                // Jika user sudah dihapus, nama_pelapor tetap ada.
+                                // Tampilkan akun user sebagai 'Anonim' jika user_id NULL.
+                                $nama_pelapor_display = htmlspecialchars($laporan['nama_pelapor'] ?? 'Anonim');
+                                if (empty($laporan['nama_pelapor'])) {
+                                    $nama_pelapor_display = '<em style="color:var(--text-muted);">Anonim</em>';
+                                }
+                                ?>
+                                <strong style="font-size:0.85rem;"><?= $nama_pelapor_display ?></strong>
                                 <?php if (!empty($laporan['nama_user'])): ?>
                                 <div class="text-muted-custom"><i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($laporan['nama_user']) ?></div>
+                                <?php else: ?>
+                                <div class="text-muted-custom"><i class="bi bi-person-slash me-1"></i><em>User dihapus</em></div>
                                 <?php endif; ?>
                             </td>
                             <?php endif; ?>

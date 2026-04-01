@@ -40,97 +40,30 @@ if (mysqli_num_rows($result) === 0) {
 $laporan = mysqli_fetch_assoc($result);
 $errors  = [];
 
-// ── Proses form UPDATE ──
+// ── Proses form UPDATE (HANYA kolom 'status') ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // 1. Sanitasi input teks
-    $nama_pelapor = trim(mysqli_real_escape_string($koneksi, $_POST['nama_pelapor'] ?? ''));
-    $fasilitas    = trim(mysqli_real_escape_string($koneksi, $_POST['fasilitas']    ?? ''));
-    $deskripsi    = trim(mysqli_real_escape_string($koneksi, $_POST['deskripsi']    ?? ''));
-    $status       = trim(mysqli_real_escape_string($koneksi, $_POST['status']       ?? ''));
+    // Ambil & validasi status saja
+    $status = trim(mysqli_real_escape_string($koneksi, $_POST['status'] ?? ''));
 
-    // 2. Validasi
-    if (empty($nama_pelapor)) $errors[] = 'Nama pelapor wajib diisi.';
-    if (empty($fasilitas))    $errors[] = 'Nama fasilitas wajib diisi.';
-    if (empty($deskripsi))    $errors[] = 'Deskripsi kerusakan wajib diisi.';
     if (!in_array($status, ['Menunggu', 'Diproses', 'Selesai'])) {
-        $errors[] = 'Status tidak valid.';
+        $errors[] = 'Pilih status yang valid.';
     }
 
-    // 3. Proses foto baru (jika ada)
-    $foto_lama    = $laporan['foto_bukti']; // simpan nama foto lama
-    $nama_file_db = $foto_lama;             // default: pakai foto lama
-
-    if (isset($_FILES['foto_bukti']) && $_FILES['foto_bukti']['error'] !== UPLOAD_ERR_NO_FILE) {
-        $file      = $_FILES['foto_bukti'];
-        $file_tmp  = $file['tmp_name'];
-        $file_name = $file['name'];
-        $file_size = $file['size'];
-        $file_error= $file['error'];
-
-        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
-        $allowed_exts  = ['jpg', 'jpeg', 'png'];
-        $file_ext      = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-        $finfo         = finfo_open(FILEINFO_MIME_TYPE);
-        $mime_type     = finfo_file($finfo, $file_tmp);
-        finfo_close($finfo);
-
-        if ($file_error !== UPLOAD_ERR_OK) {
-            $errors[] = 'Terjadi kesalahan saat mengunggah file baru. Kode error: ' . $file_error;
-        } elseif (!in_array($file_ext, $allowed_exts)) {
-            $errors[] = 'Ekstensi file tidak diizinkan. Hanya .jpg, .jpeg, dan .png.';
-        } elseif (!in_array($mime_type, $allowed_types)) {
-            $errors[] = 'Tipe file tidak valid. File harus berupa gambar JPG atau PNG asli.';
-        } elseif ($file_size > 5 * 1024 * 1024) {
-            $errors[] = 'Ukuran file terlalu besar. Maksimal 5 MB.';
-        } else {
-            $nama_file_baru = 'foto_' . time() . '_' . uniqid() . '.' . $file_ext;
-
-            if (!is_dir('uploads')) mkdir('uploads', 0755, true);
-
-            if (move_uploaded_file($file_tmp, 'uploads/' . $nama_file_baru)) {
-                // Hapus foto lama dari server jika ada
-                if (!empty($foto_lama) && file_exists('uploads/' . $foto_lama)) {
-                    unlink('uploads/' . $foto_lama);
-                }
-                $nama_file_db = $nama_file_baru;
-            } else {
-                $errors[] = 'Gagal menyimpan foto baru. Pastikan folder uploads/ memiliki izin tulis.';
-            }
-        }
-    }
-
-    // 4. Hapus foto (jika user centang checkbox hapus_foto)
-    if (isset($_POST['hapus_foto']) && $_POST['hapus_foto'] === '1') {
-        if (!empty($foto_lama) && file_exists('uploads/' . $foto_lama)) {
-            unlink('uploads/' . $foto_lama);
-        }
-        $nama_file_db = ''; // Kosongkan di database
-    }
-
-    // 5. Jalankan UPDATE jika tidak ada error
+    // Jalankan UPDATE — HANYA kolom status, data pelapor tidak disentuh
     if (empty($errors)) {
-        $sql_update = "UPDATE laporan_kerusakan
-                       SET nama_pelapor = '$nama_pelapor',
-                           fasilitas    = '$fasilitas',
-                           deskripsi    = '$deskripsi',
-                           foto_bukti   = '$nama_file_db',
-                           status       = '$status'
-                       WHERE id = $id";
+        $sql_update = "UPDATE laporan_kerusakan SET status = '$status' WHERE id = $id";
 
         if (mysqli_query($koneksi, $sql_update)) {
             header('Location: dashboard.php?pesan=edit_sukses');
             exit;
         } else {
-            $errors[] = 'Gagal memperbarui data: ' . mysqli_error($koneksi);
+            $errors[] = 'Gagal memperbarui status: ' . mysqli_error($koneksi);
         }
     }
 
-    // Refresh data laporan agar form menampilkan nilai terbaru dari POST
-    $laporan['nama_pelapor'] = $_POST['nama_pelapor'] ?? $laporan['nama_pelapor'];
-    $laporan['fasilitas']    = $_POST['fasilitas']    ?? $laporan['fasilitas'];
-    $laporan['deskripsi']    = $_POST['deskripsi']    ?? $laporan['deskripsi'];
-    $laporan['status']       = $_POST['status']       ?? $laporan['status'];
+    // Refresh nilai status dari POST supaya form tetap sinkron
+    $laporan['status'] = $_POST['status'] ?? $laporan['status'];
 }
 ?>
 <!DOCTYPE html>
@@ -138,8 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Laporan #<?= $id ?> | Lapor-Sekolah</title>
-    <meta name="description" content="Form untuk mengedit laporan kerusakan fasilitas yang sudah ada.">
+    <title>Ubah Status Laporan #<?= $id ?> | Lapor-Sekolah</title>
+    <meta name="description" content="Admin mengubah status laporan kerusakan fasilitas.">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -215,8 +148,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .id-badge { background:rgba(79,70,229,0.2); border:1px solid rgba(79,70,229,0.4); color:var(--primary-light); padding:0.3rem 0.8rem; border-radius:8px; font-size:0.85rem; font-weight:700; }
 
+        /* Read-only field styling */
+        .form-control-readonly {
+            width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(51,65,85,0.6);
+            border-radius:10px; padding:0.75rem 1rem; color:var(--text-muted);
+            font-size:0.9rem; font-family:'Inter',sans-serif; cursor:not-allowed;
+            user-select:none;
+        }
         footer { background:var(--card-bg); border-top:1px solid var(--border); padding:1.5rem 0; text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:3rem; }
-    </style>
 </head>
 <body>
 
@@ -235,8 +174,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="bi bi-pencil-fill" style="color:#93c5fd;font-size:1.3rem;"></i>
             </div>
             <div>
-                <h1>Edit Laporan <span class="id-badge">ID #<?= $id ?></span></h1>
-                <p>Perbarui informasi laporan kerusakan fasilitas.</p>
+                <h1>Ubah Status <span class="id-badge">ID #<?= $id ?></span></h1>
+                <p>Data laporan bersifat <strong style="color:#fcd34d;">read-only</strong>. Admin hanya dapat mengubah status.
+                </p>
             </div>
         </div>
     </div>
@@ -256,48 +196,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <?php endif; ?>
 
-        <form method="POST" enctype="multipart/form-data" novalidate>
+        <form method="POST" novalidate>
 
-            <h6 style="color:var(--text-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:1rem;">
-                <i class="bi bi-person me-1"></i> Informasi Pelapor
-            </h6>
-
-            <div class="form-group">
-                <label class="form-label-custom" for="nama_pelapor">
-                    Nama Lengkap <span class="badge-required">Wajib</span>
-                </label>
-                <input type="text" id="nama_pelapor" name="nama_pelapor"
-                       class="form-control-custom"
-                       value="<?= htmlspecialchars($laporan['nama_pelapor']) ?>"
-                       maxlength="100">
+            <!-- ══ INFO PELAPOR (READ-ONLY) ══ -->
+            <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;">
+                <p style="font-size:0.75rem;color:#fcd34d;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem;">
+                    <i class="bi bi-lock-fill me-1"></i> Data Asli Pelapor — Read Only
+                </p>
+                <div class="form-group">
+                    <label class="form-label-custom">Nama Pelapor</label>
+                    <div class="form-control-readonly"><?= htmlspecialchars($laporan['nama_pelapor']) ?></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label-custom">Fasilitas yang Rusak</label>
+                    <div class="form-control-readonly"><?= htmlspecialchars($laporan['fasilitas']) ?></div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label-custom">Deskripsi Kerusakan</label>
+                    <div class="form-control-readonly" style="min-height:80px;line-height:1.6;"><?= htmlspecialchars($laporan['deskripsi']) ?></div>
+                </div>
             </div>
 
             <hr class="section-divider">
 
+            <!-- ══ STATUS (BISA DIUBAH ADMIN) ══ -->
             <h6 style="color:var(--text-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:1rem;">
-                <i class="bi bi-wrench me-1"></i> Detail Kerusakan
+                <i class="bi bi-arrow-repeat me-1"></i> Ubah Status Laporan
             </h6>
-
             <div class="form-group">
-                <label class="form-label-custom" for="fasilitas">
-                    Fasilitas yang Rusak <span class="badge-required">Wajib</span>
-                </label>
-                <input type="text" id="fasilitas" name="fasilitas"
-                       class="form-control-custom"
-                       value="<?= htmlspecialchars($laporan['fasilitas']) ?>"
-                       maxlength="150">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label-custom" for="deskripsi">
-                    Deskripsi Kerusakan <span class="badge-required">Wajib</span>
-                </label>
-                <textarea id="deskripsi" name="deskripsi" class="form-control-custom"
-                          rows="4" maxlength="1000"><?= htmlspecialchars($laporan['deskripsi']) ?></textarea>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label-custom" for="status">Status Laporan</label>
+                <label class="form-label-custom" for="status">Status Saat Ini</label>
                 <select id="status" name="status" class="form-select-custom">
                     <option value="Menunggu" <?= $laporan['status'] === 'Menunggu' ? 'selected' : '' ?>>⏳ Menunggu Ditindaklanjuti</option>
                     <option value="Diproses" <?= $laporan['status'] === 'Diproses' ? 'selected' : '' ?>>🔄 Sedang Diproses</option>
@@ -307,54 +234,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <hr class="section-divider">
 
-            <h6 style="color:var(--text-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:1rem;">
-                <i class="bi bi-image me-1"></i> Foto Bukti
-            </h6>
-
-            <!-- Tampilkan foto yang sudah ada -->
-            <?php if (!empty($laporan['foto_bukti']) && file_exists('uploads/' . $laporan['foto_bukti'])): ?>
-            <div class="foto-current-box">
-                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.7rem;">
-                    <i class="bi bi-check-circle-fill me-1" style="color:#6ee7b7;"></i> Foto saat ini:
-                </p>
-                <img src="uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
-                     alt="Foto bukti saat ini" class="foto-current-img">
-                <label class="checkbox-hapus">
-                    <input type="checkbox" name="hapus_foto" value="1" id="hapus_foto">
-                    <span><i class="bi bi-trash me-1"></i>Hapus foto ini (foto tidak bisa dikembalikan)</span>
-                </label>
-            </div>
-            <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:0.75rem;">
-                Atau ganti dengan foto baru:
-            </p>
-            <?php else: ?>
-            <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">
-                <i class="bi bi-info-circle me-1"></i> Laporan ini belum memiliki foto. Upload foto baru:
-            </p>
-            <?php endif; ?>
-
-            <div class="form-group">
-                <div class="upload-area" onclick="document.getElementById('foto_bukti').click()">
-                    <i class="bi bi-cloud-upload"></i>
-                    <p><strong style="color:var(--primary-light);">Klik untuk memilih foto baru</strong></p>
-                    <p style="font-size:0.75rem;opacity:0.6;margin-top:0.3rem;">Format: JPG, JPEG, PNG &bull; Maks. 5 MB</p>
-                </div>
-                <input type="file" id="foto_bukti" name="foto_bukti" accept=".jpg,.jpeg,.png">
-
-                <div id="preview-container">
-                    <img id="preview-img" src="" alt="Preview foto baru">
-                    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem;" id="preview-name"></p>
-                </div>
-            </div>
-
-            <hr class="section-divider">
-
             <div class="d-flex gap-3">
                 <a href="dashboard.php" class="btn-back">
                     <i class="bi bi-arrow-left"></i> Batal
                 </a>
                 <button type="submit" class="btn-submit">
-                    <i class="bi bi-save-fill"></i> Simpan Perubahan
+                    <i class="bi bi-check2-circle"></i> Simpan Status
                 </button>
             </div>
 
@@ -369,22 +254,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-document.getElementById('foto_bukti').addEventListener('change', function () {
-    const file = this.files[0];
-    if (!file) return;
-    const reader  = new FileReader();
-    const preview = document.getElementById('preview-container');
-    const img     = document.getElementById('preview-img');
-    const nameEl  = document.getElementById('preview-name');
-    reader.onload = (e) => {
-        img.src = e.target.result;
-        nameEl.textContent = `📎 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-        preview.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-});
-</script>
 
 </body>
 </html>

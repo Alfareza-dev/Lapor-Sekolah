@@ -5,7 +5,17 @@
 // INSERT data ke database + upload foto
 // ============================================
 
+session_start();
 require_once 'koneksi.php';
+
+// ── GUARD: wajib login ──
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+$session_user_id = (int) $_SESSION['user_id'];
+$session_nama    = $_SESSION['nama']; // Auto-fill nama pelapor
 
 $errors  = [];
 $success = false;
@@ -74,12 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ── 4. Simpan ke database jika tidak ada error ──
     if (empty($errors)) {
-        $sql = "INSERT INTO laporan_kerusakan (nama_pelapor, fasilitas, deskripsi, foto_bukti, status)
-                VALUES ('$nama_pelapor', '$fasilitas', '$deskripsi', '$nama_file_db', '$status')";
+        $sql = "INSERT INTO laporan_kerusakan (user_id, nama_pelapor, fasilitas, deskripsi, foto_bukti, status)
+                VALUES ($session_user_id, '$nama_pelapor', '$fasilitas', '$deskripsi', '$nama_file_db', '$status')";
 
         if (mysqli_query($koneksi, $sql)) {
-            // Redirect ke index dengan pesan sukses
-            header('Location: index.php?pesan=tambah_sukses');
+            // Redirect ke dashboard dengan pesan sukses
+            header('Location: dashboard.php?pesan=tambah_sukses');
             exit;
         } else {
             $errors[] = 'Gagal menyimpan laporan ke database: ' . mysqli_error($koneksi);
@@ -187,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <nav class="navbar-custom sticky-top">
     <div class="container d-flex align-items-center">
-        <a class="navbar-brand-custom" href="index.php">
+        <a class="navbar-brand-custom" href="dashboard.php">
             <i class="bi bi-shield-exclamation me-2" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
     </div>
@@ -235,7 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="text" id="nama_pelapor" name="nama_pelapor"
                        class="form-control-custom"
                        placeholder="Contoh: Budi Santoso"
-                       value="<?= htmlspecialchars($_POST['nama_pelapor'] ?? '') ?>"
+                       value="<?= htmlspecialchars($_POST['nama_pelapor'] ?? $session_nama) ?>"
                        maxlength="100">
             </div>
 
@@ -301,7 +311,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Tombol Aksi -->
             <div class="d-flex gap-3">
-                <a href="index.php" class="btn-back">
+                <a href="dashboard.php" class="btn-back">
                     <i class="bi bi-arrow-left"></i> Batal
                 </a>
                 <button type="submit" class="btn-submit">

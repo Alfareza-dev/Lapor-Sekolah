@@ -5,7 +5,19 @@
 // data di database dan ganti foto jika ada
 // ============================================
 
+session_start();
 require_once 'koneksi.php';
+
+// ── GUARD: wajib login DAN harus admin ──
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+if ($_SESSION['role'] !== 'admin') {
+    // User biasa tidak boleh edit laporan orang lain
+    header('Location: dashboard.php');
+    exit;
+}
 
 // ── Validasi: ID harus ada di URL ──
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -21,7 +33,7 @@ $result     = mysqli_query($koneksi, $sql_select);
 
 if (mysqli_num_rows($result) === 0) {
     // Data tidak ditemukan, kembali ke index
-    header('Location: index.php');
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -107,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        WHERE id = $id";
 
         if (mysqli_query($koneksi, $sql_update)) {
-            header('Location: index.php?pesan=edit_sukses');
+            header('Location: dashboard.php?pesan=edit_sukses');
             exit;
         } else {
             $errors[] = 'Gagal memperbarui data: ' . mysqli_error($koneksi);
@@ -210,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <nav class="navbar-custom sticky-top">
     <div class="container d-flex align-items-center">
-        <a class="navbar-brand-custom" href="index.php">
+        <a class="navbar-brand-custom" href="dashboard.php">
             <i class="bi bi-shield-exclamation me-2" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
     </div>
@@ -338,7 +350,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <hr class="section-divider">
 
             <div class="d-flex gap-3">
-                <a href="index.php" class="btn-back">
+                <a href="dashboard.php" class="btn-back">
                     <i class="bi bi-arrow-left"></i> Batal
                 </a>
                 <button type="submit" class="btn-submit">

@@ -1,35 +1,15 @@
 <?php
 // ============================================
-// FILE: index.php
-// Deskripsi: Halaman utama - Menampilkan semua
-// laporan kerusakan dalam bentuk tabel
+// FILE: index.php (BARU — Landing Page)
+// Deskripsi: Halaman depan publik dengan
+// tombol Login & Register
 // ============================================
 
-require_once 'koneksi.php';
-
-// Ambil semua data laporan, diurutkan terbaru
-$query  = "SELECT * FROM laporan_kerusakan ORDER BY tanggal_lapor DESC";
-$result = mysqli_query($koneksi, $query);
-
-// Pesan sukses/error dari proses lain (redirect)
-$pesan = '';
-if (isset($_GET['pesan'])) {
-    if ($_GET['pesan'] === 'tambah_sukses') {
-        $pesan = '<div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle-fill me-2"></i> Laporan berhasil ditambahkan!
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                  </div>';
-    } elseif ($_GET['pesan'] === 'edit_sukses') {
-        $pesan = '<div class="alert alert-info alert-dismissible fade show" role="alert">
-                    <i class="bi bi-pencil-fill me-2"></i> Laporan berhasil diperbarui!
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                  </div>';
-    } elseif ($_GET['pesan'] === 'hapus_sukses') {
-        $pesan = '<div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i class="bi bi-trash-fill me-2"></i> Laporan berhasil dihapus!
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                  </div>';
-    }
+// Jika sudah login, langsung ke dashboard
+session_start();
+if (isset($_SESSION['user_id'])) {
+    header('Location: dashboard.php');
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -38,384 +18,316 @@ if (isset($_GET['pesan'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lapor-Sekolah | Portal Pelaporan Fasilitas</title>
-    <meta name="description" content="Portal pelaporan kerusakan fasilitas sekolah. Laporkan kerusakan dengan mudah dan pantau statusnya secara real-time.">
+    <meta name="description" content="Portal digital pelaporan kerusakan fasilitas sekolah. Laporkan dengan mudah, pantau prosesnya secara real-time.">
 
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- SweetAlert2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
-        /* ===== DESIGN SYSTEM ===== */
         :root {
-            --primary:      #4f46e5;
-            --primary-dark: #3730a3;
-            --primary-light:#818cf8;
-            --success:      #10b981;
-            --warning:      #f59e0b;
-            --danger:       #ef4444;
-            --dark-bg:      #0f172a;
-            --card-bg:      #1e293b;
-            --border:       #334155;
-            --text-primary: #f1f5f9;
-            --text-muted:   #94a3b8;
+            --primary: #4f46e5; --primary-light: #818cf8; --primary-dark: #3730a3;
+            --violet: #7c3aed; --pink: #c084fc;
+            --dark-bg: #0f172a; --card-bg: #1e293b; --border: #334155;
+            --text-primary: #f1f5f9; --text-muted: #94a3b8;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--dark-bg);
+            background: var(--dark-bg);
             color: var(--text-primary);
             min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .bg-glow {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 20%, rgba(79,70,229,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 70%, rgba(124,58,237,0.10) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 40% at 50% 90%, rgba(192,132,252,0.07) 0%, transparent 50%);
         }
 
         /* ===== NAVBAR ===== */
         .navbar-custom {
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
+            position: relative; z-index: 10;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
             padding: 1rem 0;
         }
         .navbar-brand-custom {
-            font-size: 1.4rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary-light), #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-decoration: none;
+            font-size: 1.5rem; font-weight: 900;
+            background: linear-gradient(135deg, var(--primary-light), var(--pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; text-decoration: none;
         }
-        .navbar-brand-custom span {
-            -webkit-text-fill-color: var(--text-primary);
-        }
+        .navbar-brand-custom span { -webkit-text-fill-color: var(--text-primary); }
 
         /* ===== HERO SECTION ===== */
-        .hero-section {
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
-            border-bottom: 1px solid var(--border);
-            padding: 3rem 0;
-            position: relative;
-            overflow: hidden;
+        .hero {
+            position: relative; z-index: 1;
+            min-height: calc(100vh - 73px);
+            display: flex; align-items: center;
+            padding: 4rem 0;
         }
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 50%, rgba(79,70,229,0.15) 0%, transparent 60%),
-                        radial-gradient(circle at 70% 50%, rgba(192,132,252,0.10) 0%, transparent 60%);
-        }
-        .hero-section .container { position: relative; z-index: 1; }
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            background: rgba(79,70,229,0.2);
-            border: 1px solid rgba(79,70,229,0.4);
+        .hero-eyebrow {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: rgba(79,70,229,0.15);
+            border: 1px solid rgba(79,70,229,0.35);
             color: var(--primary-light);
-            padding: 0.3rem 0.9rem;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+            padding: 0.4rem 1rem; border-radius: 50px;
+            font-size: 0.8rem; font-weight: 700;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.6s ease both;
         }
+        .hero-eyebrow i { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+
         .hero-title {
-            font-size: clamp(1.8rem, 4vw, 2.8rem);
-            font-weight: 800;
-            margin-bottom: 0.75rem;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900; line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.25rem;
+            animation: fadeInUp 0.7s 0.1s ease both;
+        }
+        .hero-title .gradient-text {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--pink) 60%, #f472b6 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .hero-subtitle {
-            color: var(--text-muted);
-            font-size: 1rem;
-            max-width: 500px;
+            font-size: 1.1rem; color: var(--text-muted); line-height: 1.7;
+            max-width: 520px; margin-bottom: 2.5rem;
+            animation: fadeInUp 0.7s 0.2s ease both;
+        }
+        .hero-cta {
+            display: flex; gap: 1rem; flex-wrap: wrap;
+            animation: fadeInUp 0.7s 0.3s ease both;
         }
 
-        /* ===== STATS CARDS ===== */
-        .stat-card {
-            background: rgba(255,255,255,0.05);
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary-custom {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--violet));
+            color: white; text-decoration: none;
+            padding: 0.85rem 2rem; border-radius: 12px;
+            font-weight: 700; font-size: 1rem;
+            transition: all 0.25s;
+            box-shadow: 0 4px 20px rgba(79,70,229,0.4);
+        }
+        .btn-primary-custom:hover {
+            color: white; transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(79,70,229,0.6);
+        }
+        .btn-outline-custom {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: rgba(255,255,255,0.06);
+            color: var(--text-primary); text-decoration: none;
+            padding: 0.85rem 2rem; border-radius: 12px;
+            font-weight: 600; font-size: 1rem;
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.2rem 1.5rem;
-            text-align: center;
-            backdrop-filter: blur(8px);
+            transition: all 0.25s;
         }
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 0.3rem;
+        .btn-outline-custom:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.1);
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
         }
-        .stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
 
-        /* ===== MAIN CONTENT ===== */
-        .main-content { padding: 2rem 0; }
-
-        /* ===== TABLE ===== */
-        .table-card {
+        /* ===== FLOATING CARD VISUAL ===== */
+        .hero-visual {
+            position: relative;
+            animation: fadeInUp 0.8s 0.3s ease both;
+        }
+        .preview-card {
             background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
         }
-        .table-card-header {
-            padding: 1.25rem 1.5rem;
+        .preview-card-header {
+            display: flex; align-items: center; gap: 0.6rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
             border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 0.75rem;
         }
-        .table-card-header h5 {
-            font-weight: 700;
-            font-size: 1rem;
-            margin: 0;
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .preview-row {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px; padding: 0.85rem 1rem;
+            margin-bottom: 0.6rem;
+            display: flex; align-items: center; gap: 0.75rem;
+            font-size: 0.85rem;
         }
-        .table-responsive { overflow-x: auto; }
-        .table-custom {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.875rem;
+        .preview-row:last-child { margin-bottom: 0; }
+        .preview-avatar {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; flex-shrink: 0;
         }
-        .table-custom thead th {
-            background: rgba(79,70,229,0.15);
-            color: var(--primary-light);
-            font-weight: 600;
-            padding: 0.85rem 1.25rem;
-            border-bottom: 1px solid var(--border);
+        .preview-badge {
+            margin-left: auto; padding: 0.2rem 0.6rem;
+            border-radius: 50px; font-size: 0.7rem; font-weight: 700;
+        }
+        .badge-y { background:rgba(245,158,11,0.15); color:#fcd34d; border:1px solid rgba(245,158,11,0.3); }
+        .badge-b { background:rgba(59,130,246,0.15);  color:#93c5fd; border:1px solid rgba(59,130,246,0.3); }
+        .badge-g { background:rgba(16,185,129,0.15);  color:#6ee7b7; border:1px solid rgba(16,185,129,0.3); }
+
+        .floating-badge {
+            position: absolute;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px; padding: 0.6rem 1rem;
+            font-size: 0.8rem; font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
             white-space: nowrap;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
+            animation: floatBadge 3s ease-in-out infinite;
         }
-        .table-custom tbody tr {
-            border-bottom: 1px solid rgba(51,65,85,0.5);
-            transition: background 0.15s;
+        @keyframes floatBadge {
+            0%,100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
         }
-        .table-custom tbody tr:last-child { border-bottom: none; }
-        .table-custom tbody tr:hover { background: rgba(79,70,229,0.07); }
-        .table-custom tbody td {
-            padding: 1rem 1.25rem;
-            vertical-align: middle;
-            color: var(--text-primary);
-        }
-        .table-custom tbody td .text-muted-custom {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-        }
+        .fb-1 { top: -18px; right: 20px; animation-delay: 0s; }
+        .fb-2 { bottom: -14px; left: 10px; animation-delay: 1.5s; }
 
-        /* ===== BADGE STATUS ===== */
-        .badge-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.35rem 0.85rem;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 600;
+        /* ===== FEATURES SECTION ===== */
+        .features-section {
+            position: relative; z-index: 1;
+            padding: 5rem 0;
+            border-top: 1px solid var(--border);
         }
-        .badge-menunggu  { background: rgba(245,158,11,0.15);  color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
-        .badge-diproses  { background: rgba(59,130,246,0.15);  color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
-        .badge-selesai   { background: rgba(16,185,129,0.15);  color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+        .section-label {
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--primary-light); margin-bottom: 0.5rem;
+        }
+        .section-title { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; margin-bottom: 0.5rem; }
+        .section-sub   { color: var(--text-muted); font-size: 1rem; }
 
-        /* ===== FOTO THUMBNAIL ===== */
-        .foto-thumb {
-            width: 52px;
-            height: 52px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 2px solid var(--border);
-            cursor: pointer;
-            transition: transform 0.2s, border-color 0.2s;
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 1.75rem;
+            height: 100%;
+            transition: border-color 0.25s, transform 0.25s;
         }
-        .foto-thumb:hover {
-            transform: scale(1.08);
-            border-color: var(--primary-light);
+        .feature-card:hover {
+            border-color: rgba(79,70,229,0.5);
+            transform: translateY(-4px);
         }
-        .no-foto {
-            width: 52px;
-            height: 52px;
-            background: rgba(255,255,255,0.05);
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-size: 1.1rem;
+        .feature-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; margin-bottom: 1rem;
         }
-
-        /* ===== TOMBOL AKSI ===== */
-        .btn-action {
-            border: none;
-            border-radius: 8px;
-            padding: 0.4rem 0.8rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            transition: all 0.2s;
-        }
-        .btn-edit {
-            background: rgba(59,130,246,0.15);
-            color: #93c5fd;
-            border: 1px solid rgba(59,130,246,0.3);
-        }
-        .btn-edit:hover { background: rgba(59,130,246,0.3); color: #bfdbfe; }
-        .btn-hapus {
-            background: rgba(239,68,68,0.15);
-            color: #fca5a5;
-            border: 1px solid rgba(239,68,68,0.3);
-        }
-        .btn-hapus:hover { background: rgba(239,68,68,0.3); color: #fecaca; }
-        .btn-tambah {
-            background: linear-gradient(135deg, var(--primary), #7c3aed);
-            color: white;
-            border-radius: 10px;
-            padding: 0.6rem 1.4rem;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(79,70,229,0.3);
-        }
-        .btn-tambah:hover {
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(79,70,229,0.5);
-        }
-
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            padding: 4rem 2rem;
-            text-align: center;
-            color: var(--text-muted);
-        }
-        .empty-state i { font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.4; }
-        .empty-state p { font-size: 0.95rem; }
-
-        /* ===== NOMOR BARIS ===== */
-        .row-num {
-            background: rgba(79,70,229,0.15);
-            color: var(--primary-light);
-            border-radius: 6px;
-            padding: 0.2rem 0.55rem;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
+        .feature-card h5 { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
+        .feature-card p  { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
 
         /* ===== FOOTER ===== */
         footer {
+            position: relative; z-index: 1;
             background: var(--card-bg);
             border-top: 1px solid var(--border);
-            padding: 1.5rem 0;
+            padding: 1.75rem 0;
             text-align: center;
             color: var(--text-muted);
             font-size: 0.85rem;
-        }
-
-        /* ===== MODAL FOTO ===== */
-        #fotoModal .modal-content {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-        #fotoModal .modal-header { border-bottom: 1px solid var(--border); }
-        #fotoModal .modal-title { color: var(--text-primary); font-weight: 600; }
-        #fotoModal .btn-close { filter: invert(1); }
-        #modalFotoImg { max-width: 100%; border-radius: 10px; }
-
-        @media (max-width: 768px) {
-            .hero-section { padding: 2rem 0; }
-            .table-custom thead th,
-            .table-custom tbody td { padding: 0.7rem 0.9rem; }
         }
     </style>
 </head>
 <body>
 
+<div class="bg-glow"></div>
+
 <!-- ===== NAVBAR ===== -->
-<nav class="navbar navbar-custom sticky-top">
-    <div class="container">
+<nav class="navbar-custom">
+    <div class="container d-flex align-items-center justify-content-between">
         <a class="navbar-brand-custom" href="index.php">
-            <i class="bi bi-shield-exclamation me-2" style="-webkit-text-fill-color: #818cf8;"></i>Lapor<span>-Sekolah</span>
+            <i class="bi bi-shield-exclamation me-1" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
-        <div class="d-flex align-items-center gap-3">
-            <span class="text-muted" style="font-size:0.8rem;">
-                <i class="bi bi-clock me-1"></i><?= date('d M Y') ?>
-            </span>
+        <div class="d-flex gap-2">
+            <a href="login.php" class="btn-outline-custom py-2 px-3" style="font-size:0.875rem;">
+                <i class="bi bi-box-arrow-in-right"></i> Masuk
+            </a>
+            <a href="register.php" class="btn-primary-custom py-2 px-3" style="font-size:0.875rem;">
+                <i class="bi bi-person-plus-fill"></i> Daftar
+            </a>
         </div>
     </div>
 </nav>
 
 <!-- ===== HERO SECTION ===== -->
-<section class="hero-section">
+<section class="hero">
     <div class="container">
-        <div class="row align-items-center g-4">
-            <div class="col-md-7">
-                <div class="hero-badge">
-                    <i class="bi bi-broadcast-pin"></i> Portal Aktif
+        <div class="row align-items-center g-5">
+            <!-- Kiri: Teks -->
+            <div class="col-lg-6">
+                <div class="hero-eyebrow">
+                    <i class="bi bi-broadcast-pin"></i> Platform Aktif — SMK Telkom Malang
                 </div>
                 <h1 class="hero-title">
-                    Portal Laporan<br>
-                    <span style="background: linear-gradient(135deg,#818cf8,#c084fc); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
-                        Kerusakan Fasilitas
-                    </span>
+                    Laporkan Kerusakan<br>
+                    <span class="gradient-text">Fasilitas Sekolah</span>
                 </h1>
                 <p class="hero-subtitle">
-                    Laporkan kerusakan fasilitas sekolah dengan mudah. Setiap laporan akan segera ditindaklanjuti oleh tim pengelola.
+                    Portal digital untuk melaporkan kerusakan fasilitas sekolah dengan cepat, mudah, dan transparan. Setiap laporan langsung ditindaklanjuti.
                 </p>
+                <div class="hero-cta">
+                    <a href="register.php" class="btn-primary-custom">
+                        <i class="bi bi-rocket-takeoff-fill"></i> Mulai Lapor Sekarang
+                    </a>
+                    <a href="login.php" class="btn-outline-custom">
+                        <i class="bi bi-person-circle"></i> Sudah Punya Akun
+                    </a>
+                </div>
             </div>
-            <div class="col-md-5">
-                <?php
-                // Hitung statistik
-                $total    = mysqli_num_rows($result);
-                mysqli_data_seek($result, 0);
 
-                $menunggu = $diproses = $selesai = 0;
-                while ($row = mysqli_fetch_assoc($result)) {
-                    if ($row['status'] === 'Menunggu')  $menunggu++;
-                    if ($row['status'] === 'Diproses')  $diproses++;
-                    if ($row['status'] === 'Selesai')   $selesai++;
-                }
-                mysqli_data_seek($result, 0); // Reset pointer
-                ?>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <div class="stat-card">
-                            <div class="stat-number" style="color:#818cf8;"><?= $total ?></div>
-                            <div class="stat-label">Total Laporan</div>
+            <!-- Kanan: Preview Card -->
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="hero-visual">
+                    <!-- Floating badges -->
+                    <span class="floating-badge fb-1">
+                        <i class="bi bi-check-circle-fill me-1" style="color:#6ee7b7;"></i> 3 Laporan Selesai Hari Ini
+                    </span>
+                    <span class="floating-badge fb-2">
+                        <i class="bi bi-lightning-charge-fill me-1" style="color:#fcd34d;"></i> Respon Cepat
+                    </span>
+
+                    <div class="preview-card">
+                        <div class="preview-card-header">
+                            <div class="dot" style="background:#ef4444;"></div>
+                            <div class="dot" style="background:#f59e0b;"></div>
+                            <div class="dot" style="background:#10b981;"></div>
+                            <span style="margin-left:0.5rem;font-size:0.8rem;color:var(--text-muted);">Dashboard Laporan</span>
                         </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card">
-                            <div class="stat-number" style="color:#fcd34d;"><?= $menunggu ?></div>
-                            <div class="stat-label">Menunggu</div>
+                        <!-- Contoh baris laporan -->
+                        <div class="preview-row">
+                            <div class="preview-avatar" style="background:rgba(239,68,68,0.15);">🚽</div>
+                            <div><div style="font-weight:600;font-size:0.85rem;">Toilet Lantai 2</div><div style="font-size:0.75rem;color:var(--text-muted);">Kran bocor — Budi S.</div></div>
+                            <span class="preview-badge badge-y">Menunggu</span>
                         </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card">
-                            <div class="stat-number" style="color:#93c5fd;"><?= $diproses ?></div>
-                            <div class="stat-label">Diproses</div>
+                        <div class="preview-row">
+                            <div class="preview-avatar" style="background:rgba(59,130,246,0.15);">💻</div>
+                            <div><div style="font-weight:600;font-size:0.85rem;">Lab Komputer A</div><div style="font-size:0.75rem;color:var(--text-muted);">PC #7 mati — Siti R.</div></div>
+                            <span class="preview-badge badge-b">Diproses</span>
                         </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card">
-                            <div class="stat-number" style="color:#6ee7b7;"><?= $selesai ?></div>
-                            <div class="stat-label">Selesai</div>
+                        <div class="preview-row">
+                            <div class="preview-avatar" style="background:rgba(16,185,129,0.15);">🏀</div>
+                            <div><div style="font-weight:600;font-size:0.85rem;">Lapangan Basket</div><div style="font-size:0.75rem;color:var(--text-muted);">Ring miring — Ahmad F.</div></div>
+                            <span class="preview-badge badge-g">Selesai</span>
                         </div>
                     </div>
                 </div>
@@ -424,131 +336,45 @@ if (isset($_GET['pesan'])) {
     </div>
 </section>
 
-<!-- ===== MAIN CONTENT ===== -->
-<main class="main-content">
+<!-- ===== FEATURES SECTION ===== -->
+<section class="features-section">
     <div class="container">
-
-        <?= $pesan ?>
-
-        <!-- Tabel Laporan -->
-        <div class="table-card">
-            <div class="table-card-header">
-                <h5><i class="bi bi-table me-2" style="color:var(--primary-light);"></i>Daftar Laporan Kerusakan</h5>
-                <a href="tambah.php" class="btn-tambah">
-                    <i class="bi bi-plus-lg"></i> Buat Laporan Baru
-                </a>
-            </div>
-
-            <?php if (mysqli_num_rows($result) === 0): ?>
-                <div class="empty-state">
-                    <i class="bi bi-inbox"></i>
-                    <h6 style="color:var(--text-primary); font-weight:600; margin-bottom:0.5rem;">Belum Ada Laporan</h6>
-                    <p>Belum ada laporan kerusakan. Klik tombol "Buat Laporan Baru" untuk menambahkan.</p>
-                </div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table-custom">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Nama Pelapor</th>
-                                <th>Fasilitas</th>
-                                <th>Deskripsi</th>
-                                <th>Foto</th>
-                                <th>Status</th>
-                                <th>Tanggal</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $no = 1;
-                            while ($laporan = mysqli_fetch_assoc($result)):
-                                // Tentukan class badge berdasarkan status
-                                $badge_class = 'badge-menunggu';
-                                $badge_icon  = 'bi-hourglass-split';
-                                if ($laporan['status'] === 'Diproses') {
-                                    $badge_class = 'badge-diproses';
-                                    $badge_icon  = 'bi-arrow-repeat';
-                                } elseif ($laporan['status'] === 'Selesai') {
-                                    $badge_class = 'badge-selesai';
-                                    $badge_icon  = 'bi-check2-circle';
-                                }
-                            ?>
-                            <tr>
-                                <td><span class="row-num"><?= $no++ ?></span></td>
-                                <td>
-                                    <strong><?= htmlspecialchars($laporan['nama_pelapor']) ?></strong>
-                                </td>
-                                <td><?= htmlspecialchars($laporan['fasilitas']) ?></td>
-                                <td>
-                                    <span title="<?= htmlspecialchars($laporan['deskripsi']) ?>">
-                                        <?= htmlspecialchars(mb_substr($laporan['deskripsi'], 0, 60)) ?>
-                                        <?= mb_strlen($laporan['deskripsi']) > 60 ? '...' : '' ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <?php if (!empty($laporan['foto_bukti']) && file_exists('uploads/' . $laporan['foto_bukti'])): ?>
-                                        <img src="uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
-                                             alt="Foto bukti"
-                                             class="foto-thumb"
-                                             data-bs-toggle="modal"
-                                             data-bs-target="#fotoModal"
-                                             data-src="uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
-                                             data-nama="<?= htmlspecialchars($laporan['fasilitas']) ?>">
-                                    <?php else: ?>
-                                        <div class="no-foto" title="Tidak ada foto">
-                                            <i class="bi bi-image"></i>
-                                        </div>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <span class="badge-status <?= $badge_class ?>">
-                                        <i class="bi <?= $badge_icon ?>"></i>
-                                        <?= $laporan['status'] ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div><?= date('d M Y', strtotime($laporan['tanggal_lapor'])) ?></div>
-                                    <div class="text-muted-custom"><?= date('H:i', strtotime($laporan['tanggal_lapor'])) ?> WIB</div>
-                                </td>
-                                <td>
-                                    <div class="d-flex gap-2">
-                                        <a href="edit.php?id=<?= $laporan['id'] ?>" class="btn-action btn-edit">
-                                            <i class="bi bi-pencil-fill"></i> Edit
-                                        </a>
-                                        <button type="button"
-                                                class="btn-action btn-hapus tombol-hapus"
-                                                data-id="<?= $laporan['id'] ?>"
-                                                data-nama="<?= htmlspecialchars($laporan['fasilitas']) ?>">
-                                            <i class="bi bi-trash-fill"></i> Hapus
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
+        <div class="text-center mb-5">
+            <div class="section-label">Kenapa Lapor-Sekolah?</div>
+            <h2 class="section-title">Semua yang Kamu Butuhkan</h2>
+            <p class="section-sub">Fitur lengkap untuk pelaporan yang efektif dan transparan.</p>
         </div>
-    </div>
-</main>
-
-<!-- ===== MODAL LIHAT FOTO ===== -->
-<div class="modal fade" id="fotoModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-image me-2"></i><span id="modalFotoLabel">Foto Bukti</span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:rgba(79,70,229,0.15);">
+                        <i class="bi bi-send-fill" style="color:#818cf8;"></i>
+                    </div>
+                    <h5>Lapor Kilat</h5>
+                    <p>Buat laporan dalam hitungan detik. Isi form sederhana, lampirkan foto bukti, dan kirim. Selesai!</p>
+                </div>
             </div>
-            <div class="modal-body text-center p-4">
-                <img id="modalFotoImg" src="" alt="Foto Bukti Laporan">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:rgba(16,185,129,0.15);">
+                        <i class="bi bi-graph-up-arrow" style="color:#6ee7b7;"></i>
+                    </div>
+                    <h5>Pantau Status Real-time</h5>
+                    <p>Lacak status laporanmu dari Menunggu → Diproses → Selesai secara transparan.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background:rgba(245,158,11,0.15);">
+                        <i class="bi bi-shield-lock-fill" style="color:#fcd34d;"></i>
+                    </div>
+                    <h5>Aman & Terproteksi</h5>
+                    <p>Login aman dengan enkripsi password bcrypt. Setiap akun hanya bisa akses datanya sendiri.</p>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 <!-- ===== FOOTER ===== -->
 <footer>
@@ -557,130 +383,10 @@ if (isset($_GET['pesan'])) {
             <i class="bi bi-shield-check me-1" style="color:var(--primary-light);"></i>
             <strong>Lapor-Sekolah</strong> &mdash; Portal Pelaporan Fasilitas &copy; <?= date('Y') ?>
         </p>
-        <p class="mt-1" style="font-size:0.75rem; opacity:0.6;">Dibuat dengan PHP Native & Bootstrap 5</p>
+        <p class="mt-1" style="font-size:0.75rem;opacity:0.6;">Tugas XI RPL &bull; SMK Telkom Malang &bull; PHP Native &amp; Bootstrap 5</p>
     </div>
 </footer>
 
-<!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- SweetAlert2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-// ── 1. Tampilkan foto di modal saat thumbnail diklik ──
-const fotoModal = document.getElementById('fotoModal');
-fotoModal.addEventListener('show.bs.modal', function (event) {
-    const trigger = event.relatedTarget;
-    document.getElementById('modalFotoImg').src           = trigger.getAttribute('data-src');
-    document.getElementById('modalFotoLabel').textContent = trigger.getAttribute('data-nama');
-});
-
-// ── 2. Auto-hide alert Bootstrap setelah 4 detik ──
-setTimeout(() => {
-    document.querySelectorAll('.alert').forEach(el => {
-        const bsAlert = new bootstrap.Alert(el);
-        bsAlert.close();
-    });
-}, 4000);
-
-// ── 3. Konfirmasi Hapus dengan SweetAlert2 (Dark Mode) ──
-document.querySelectorAll('.tombol-hapus').forEach(function (tombol) {
-    tombol.addEventListener('click', function () {
-        const id       = this.getAttribute('data-id');
-        const namaFasilitas = this.getAttribute('data-nama');
-
-        Swal.fire({
-            // --- Konten ---
-            title: 'Hapus Laporan?',
-            html: `Kamu akan menghapus laporan untuk:<br><strong style="color:#f87171;">${namaFasilitas}</strong><br><br>
-                   <span style="font-size:0.85rem;color:#94a3b8;">Data dan foto bukti akan hilang secara permanen dan tidak bisa dikembalikan.</span>`,
-            icon: 'warning',
-
-            // --- Tombol ---
-            showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-trash-fill"></i> Ya, Hapus!',
-            cancelButtonText:  '<i class="bi bi-x-lg"></i> Batal',
-            reverseButtons: true,
-
-            // --- Styling Dark Mode ──
-            background: '#1e293b',
-            color: '#f1f5f9',
-            iconColor: '#f59e0b',
-
-            customClass: {
-                popup:         'swal-popup-custom',
-                title:         'swal-title-custom',
-                confirmButton: 'swal-btn-confirm',
-                cancelButton:  'swal-btn-cancel',
-            },
-
-            // --- Efek visual ---
-            showClass:  { popup: 'swal2-show' },
-            hideClass:  { popup: 'swal2-hide' },
-            buttonsStyling: false,  // Nonaktifkan styling bawaan agar CSS custom aktif
-        }).then(function (result) {
-            if (result.isConfirmed) {
-                // Arahkan ke hapus.php jika user tekan "Ya, Hapus!"
-                window.location.href = 'hapus.php?id=' + id;
-            }
-        });
-    });
-});
-</script>
-
-<style>
-/* ── Custom SweetAlert2 Dark Mode Styles ── */
-.swal-popup-custom {
-    border: 1px solid #334155 !important;
-    border-radius: 16px !important;
-    font-family: 'Inter', sans-serif !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
-}
-.swal-title-custom {
-    font-size: 1.3rem !important;
-    font-weight: 800 !important;
-    color: #f1f5f9 !important;
-}
-.swal-btn-confirm {
-    background: linear-gradient(135deg, #dc2626, #991b1b) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 10px !important;
-    padding: 0.65rem 1.5rem !important;
-    font-weight: 700 !important;
-    font-size: 0.9rem !important;
-    cursor: pointer !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 0.4rem !important;
-    transition: all 0.2s !important;
-    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4) !important;
-}
-.swal-btn-confirm:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.6) !important;
-}
-.swal-btn-cancel {
-    background: rgba(255, 255, 255, 0.07) !important;
-    color: #94a3b8 !important;
-    border: 1px solid #334155 !important;
-    border-radius: 10px !important;
-    padding: 0.65rem 1.5rem !important;
-    font-weight: 600 !important;
-    font-size: 0.9rem !important;
-    cursor: pointer !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 0.4rem !important;
-    transition: all 0.2s !important;
-}
-.swal-btn-cancel:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
-    color: #f1f5f9 !important;
-}
-/* Override warna icon SweetAlert2 agar cocok dengan dark mode */
-.swal2-icon.swal2-warning { border-color: #f59e0b !important; }
-</style>
-
 </body>
 </html>

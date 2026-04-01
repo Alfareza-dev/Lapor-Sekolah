@@ -5,7 +5,18 @@
 // database dan hapus file foto dari server
 // ============================================
 
+session_start();
 require_once 'koneksi.php';
+
+// ── GUARD: wajib login DAN harus admin ──
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: dashboard.php');
+    exit;
+}
 
 // ── 1. Validasi parameter ID ──
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -21,7 +32,7 @@ $result     = mysqli_query($koneksi, $sql_select);
 
 if (mysqli_num_rows($result) === 0) {
     // ID tidak ditemukan, kembali ke halaman utama
-    header('Location: index.php');
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -42,7 +53,7 @@ if (mysqli_query($koneksi, $sql_hapus)) {
     }
 
     // Redirect ke index dengan pesan sukses
-    header('Location: index.php?pesan=hapus_sukses');
+    header('Location: dashboard.php?pesan=hapus_sukses');
     exit;
 
 } else {
@@ -56,7 +67,7 @@ if (mysqli_query($koneksi, $sql_hapus)) {
         <i class="fs-1">❌</i>
         <h4 class="mt-3">Gagal Menghapus Laporan</h4>
         <p class="text-muted">' . mysqli_error($koneksi) . '</p>
-        <a href="index.php" class="btn btn-outline-light mt-2">← Kembali ke Daftar</a>
+        <a href="dashboard.php" class="btn btn-outline-light mt-2">← Kembali ke Dashboard</a>
     </div>
     </body></html>
     ');

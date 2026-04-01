@@ -1,0 +1,21 @@
+# ============================================
+# FILE: uploads/.htaccess
+# Tujuan: Keamanan folder uploads — mencegah
+# eksekusi file PHP di dalam folder ini.
+# Ini penting agar hacker tidak bisa upload
+# file PHP berbahaya dan menjalankannya!
+# ============================================
+
+# Nonaktifkan eksekusi PHP di folder uploads
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|cgi|sh)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Paksa browser untuk mendownload (bukan execute) file
+# (opsional, bisa diaktifkan jika diperlukan)
+# <FilesMatch "\.(php)$">
+#     Header set Content-Disposition attachment
+# </FilesMatch>
+
+Options -Indexes

@@ -19,13 +19,15 @@
 // redirect ke login (guard dasar).
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
-    exit;
+    exit; // ← WAJIB: hentikan eksekusi script setelah redirect
 }
 
 // ── Langkah 2: Cek apakah user MASIH ADA di database ──
 // Ini mengatasi "Ghost Session": kondisi di mana
 // Admin menghapus user, tapi user itu masih punya
 // session aktif dan bisa terus mengakses halaman.
+// Tanpa exit di sini, script pemanggil (mis. tambah.php)
+// akan terus mengeksekusi INSERT dan memicu FK error.
 $ghost_check_id = (int) $_SESSION['user_id'];
 
 $ghost_sql    = "SELECT id FROM users WHERE id = $ghost_check_id LIMIT 1";
@@ -40,7 +42,7 @@ if (!$ghost_result || mysqli_num_rows($ghost_result) === 0) {
     // Redirect ke login dengan parameter khusus
     // login.php akan menampilkan SweetAlert2 dari parameter ini
     header('Location: login.php?pesan=akun_dihapus');
-    exit;
+    exit; // ← KRITIS: tanpa ini, script tetap berjalan → FK constraint error!
 }
 
 // ── Langkah 3: Bersihkan variabel sementara ──

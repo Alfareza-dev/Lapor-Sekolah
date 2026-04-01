@@ -47,26 +47,36 @@ $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $status = trim(mysqli_real_escape_string($koneksi, $_POST['status'] ?? ''));
+    $status = trim($_POST['status'] ?? '');
+    // Ambil catatan admin (boleh kosong)
+    $catatan_admin = trim($_POST['catatan_admin'] ?? '');
 
     if (!in_array($status, ['Menunggu', 'Diproses', 'Selesai'])) {
         $errors[] = 'Pilih status yang valid.';
     }
 
     if (empty($errors)) {
-        // UPDATE hanya kolom status — data pelapor tidak disentuh sama sekali
-        $sql_update = "UPDATE laporan_kerusakan SET status = '$status' WHERE id = $id";
+        // Gunakan Prepared Statement untuk keamanan penuh
+        $stmt = mysqli_prepare(
+            $koneksi,
+            "UPDATE laporan_kerusakan SET status = ?, catatan_admin = ? WHERE id = ?"
+        );
+        // s = string, s = string, i = integer
+        mysqli_stmt_bind_param($stmt, 'ssi', $status, $catatan_admin, $id);
 
-        if (mysqli_query($koneksi, $sql_update)) {
+        if (mysqli_stmt_execute($stmt)) {
+            mysqli_stmt_close($stmt);
             header('Location: dashboard.php?pesan=edit_sukses');
             exit;
         } else {
-            $errors[] = 'Gagal memperbarui status: ' . mysqli_error($koneksi);
+            $errors[] = 'Gagal memperbarui data: ' . mysqli_stmt_error($stmt);
+            mysqli_stmt_close($stmt);
         }
     }
 
-    // Sinkronkan nilai status ke $laporan agar dropdown tetap sinkron dengan POST
-    $laporan['status'] = $_POST['status'] ?? $laporan['status'];
+    // Sinkronkan ke $laporan agar form tetap menampilkan nilai POST
+    $laporan['status']        = $status;
+    $laporan['catatan_admin'] = $catatan_admin;
 }
 
 // ═══════════════════════════════════════════
@@ -259,6 +269,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .form-select-custom option { background: var(--card-bg); color: var(--text-primary); }
 
+        /* Editable textarea */
+        .form-control-custom {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-control-custom::placeholder { color: var(--text-muted); }
+        .form-control-custom:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+            background: rgba(79,70,229,0.05);
+        }
+
         /* Alert error */
         .alert-error {
             background: rgba(239,68,68,0.1);
@@ -431,9 +461,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <hr class="section-divider">
 
-                <!-- ══ STATUS (BISA DIUBAH ADMIN) ══ -->
+                <!-- ══ STATUS + CATATAN ADMIN ══ -->
                 <div class="form-section-label" style="color:var(--primary-light);">
-                    <i class="bi bi-arrow-repeat"></i> Perbarui Status Laporan
+                    <i class="bi bi-arrow-repeat"></i> Perbarui Status &amp; Catatan
                 </div>
 
                 <div class="form-group">
@@ -443,6 +473,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <option value="Diproses" <?= ($laporan['status'] === 'Diproses') ? 'selected' : '' ?>>🔄 Sedang Diproses</option>
                         <option value="Selesai"  <?= ($laporan['status'] === 'Selesai')  ? 'selected' : '' ?>>✅ Selesai Diperbaiki</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label-custom" for="catatan_admin">
+                        <i class="bi bi-chat-left-text me-1"></i>Catatan Admin
+                        <span style="font-size:0.72rem;font-weight:400;color:var(--text-muted);margin-left:0.4rem;">(opsional — akan ditampilkan ke pelapor)</span>
+                    </label>
+                    <textarea id="catatan_admin" name="catatan_admin"
+                              class="form-control-custom"
+                              rows="4"
+                              maxlength="1000"
+                              placeholder="Tulis catatan untuk pelapor, mis: 'Laporan sudah diteruskan ke bagian sarana'"
+                              style="resize:vertical;"><?= htmlspecialchars($laporan['catatan_admin'] ?? '') ?></textarea>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;text-align:right;">
+                        Maks. 1000 karakter
+                    </div>
                 </div>
 
                 <hr class="section-divider">

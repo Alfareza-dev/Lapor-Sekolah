@@ -455,10 +455,12 @@ mysqli_data_seek($result, 0);
                                         </button>
                                     <?php endif; ?>
                                     <?php else: ?>
-                                    <!-- User: read only -->
-                                    <span style="color:var(--text-muted);font-size:0.78rem;">
-                                        <i class="bi bi-lock-fill me-1"></i>Read Only
-                                    </span>
+                                    <!-- User: tombol Detail Laporan -->
+                                    <a href="detail_laporan.php?id=<?= $laporan['id'] ?>"
+                                       class="btn-action btn-edit"
+                                       style="background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.25);">
+                                        <i class="bi bi-file-earmark-text-fill"></i> Lihat Detail
+                                    </a>
                                     <?php endif; ?>
                                 </div>
                             </td>

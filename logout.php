@@ -1,6 +1,6 @@
 <?php
 session_start();
 session_destroy();
-header('Location: login.php?pesan=logout');
+header('Location: /login?pesan=logout');
 exit;
 ?>

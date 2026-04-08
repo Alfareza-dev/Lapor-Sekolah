@@ -4,12 +4,12 @@ require_once 'config/koneksi.php';
 require_once 'config/auth_check.php';
 
 if ($_SESSION['role'] === 'admin') {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -24,7 +24,7 @@ $result  = mysqli_stmt_get_result($stmt);
 mysqli_stmt_close($stmt);
 
 if (mysqli_num_rows($result) === 0) {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -117,6 +117,7 @@ function get_status_badge(string $status): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
     <title>Detail Laporan #<?= $id ?> | Lapor-Sekolah</title>
     <meta name="description" content="Detail laporan kerusakan fasilitas sekolah yang kamu kirimkan.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -296,7 +297,7 @@ function get_status_badge(string $status): string {
 <body>
 <nav class="navbar-custom">
     <div class="container d-flex align-items-center justify-content-between">
-        <a class="navbar-brand-custom" href="dashboard.php">
+        <a class="navbar-brand-custom" href="/dashboard">
             <i class="bi bi-shield-exclamation me-1" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
         <div class="d-flex align-items-center gap-2">
@@ -304,7 +305,7 @@ function get_status_badge(string $status): string {
                 <i class="bi bi-person-fill me-1" style="color:#818cf8;"></i>
                 <?= htmlspecialchars($_SESSION['nama']) ?>
             </span>
-            <a href="dashboard.php" class="btn-back-nav">
+            <a href="/dashboard" class="btn-back-nav">
                 <i class="bi bi-arrow-left"></i> Dashboard
             </a>
         </div>
@@ -351,7 +352,7 @@ function get_status_badge(string $status): string {
                 <div class="field-group">
                     <div class="field-label">Foto Bukti</div>
                     <div style="margin-top:0.5rem;">
-                        <img src="uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
+                        <img src="/uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
                              alt="Foto Bukti"
                              style="max-width:280px;border-radius:12px;border:2px solid var(--border);cursor:pointer;"
                              onclick="showFoto(this.src)">
@@ -455,7 +456,7 @@ function get_status_badge(string $status): string {
                             <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">
                                 <i class="bi bi-image me-1"></i>Foto saat ini:
                             </div>
-                            <img src="uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
+                            <img src="/uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
                                  alt="Foto saat ini"
                                  style="max-width:160px;border-radius:8px;border:2px solid var(--border);">
                             <div style="font-size:0.75rem;color:#fca5a5;margin-top:0.5rem;">
@@ -477,7 +478,7 @@ function get_status_badge(string $status): string {
                     </div>
 
                     <div class="d-flex gap-3 mt-3">
-                        <a href="dashboard.php" class="btn-back">
+                        <a href="/dashboard" class="btn-back">
                             <i class="bi bi-arrow-left"></i> Batal
                         </a>
                         <button type="submit" class="btn-submit">
@@ -496,7 +497,7 @@ function get_status_badge(string $status): string {
                     </div>
                 </div>
                 <div>
-                    <a href="dashboard.php" class="btn-back">
+                    <a href="/dashboard" class="btn-back">
                         <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
                     </a>
                 </div>

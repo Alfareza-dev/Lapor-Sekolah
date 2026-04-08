@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (isset($_SESSION['user_id'])) {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['email']   = $user['email'];
                 $_SESSION['role']    = $user['role'];
                 session_regenerate_id(true);
-                header('Location: dashboard.php');
+                header('Location: /dashboard');
                 exit;
             } else {
                 $error = 'Password salah. Silakan coba lagi.';
@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
     <title>Masuk | Lapor-Sekolah</title>
     <meta name="description" content="Masuk ke akun Lapor-Sekolah kamu untuk mulai membuat laporan.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -166,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="bg-glow"></div>
 <nav>
     <div class="container">
-        <a href="index.php" class="brand">
+        <a href="/" class="brand">
             <i class="bi bi-shield-exclamation me-1" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
     </div>
@@ -215,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="divider">atau</div>
         <div class="link-register">
-            Belum punya akun? <a href="register.php">Daftar Sekarang</a>
+            Belum punya akun? <a href="/register">Daftar Sekarang</a>
         </div>
     </div>
 </div>

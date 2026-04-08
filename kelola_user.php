@@ -4,7 +4,7 @@ require_once 'config/koneksi.php';
 require_once 'config/auth_check.php';
 
 if ($_SESSION['role'] !== 'admin') {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -36,6 +36,7 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
     <title>Kelola User | Lapor-Sekolah Admin</title>
     <meta name="description" content="Panel admin untuk mengelola akun user yang terdaftar di Lapor-Sekolah.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -173,7 +174,7 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
 <body>
 <nav class="navbar-custom">
     <div class="container d-flex align-items-center justify-content-between gap-2 flex-wrap">
-        <a class="navbar-brand-custom" href="dashboard.php">
+        <a class="navbar-brand-custom" href="/dashboard">
             <i class="bi bi-shield-exclamation me-1" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
         <div class="d-flex align-items-center gap-2">
@@ -181,7 +182,7 @@ if (isset($_GET['pesan']) && $_GET['pesan'] === 'hapus_user_sukses') {
                 <i class="bi bi-person-fill-gear me-1" style="color:#c084fc;"></i>
                 Admin: <strong style="color:var(--text-primary);"><?= htmlspecialchars($admin_nama) ?></strong>
             </span>
-            <a href="dashboard.php" class="btn-back-nav">
+            <a href="/dashboard" class="btn-back-nav">
                 <i class="bi bi-arrow-left"></i> Dashboard
             </a>
         </div>
@@ -378,7 +379,7 @@ document.querySelectorAll('.tombol-hapus-user').forEach(function(btn) {
             buttonsStyling: false,
         }).then(result => {
             if (result.isConfirmed) {
-                window.location.href = 'hapus_user.php?id=' + id;
+                window.location.href = '/hapus-user/' + id;
             }
         });
     });

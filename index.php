@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (isset($_SESSION['user_id'])) {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 ?>
@@ -10,6 +10,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
     <title>Lapor-Sekolah | Portal Pelaporan Fasilitas</title>
     <meta name="description" content="Portal digital pelaporan kerusakan fasilitas sekolah. Laporkan dengan mudah, pantau prosesnya secara real-time.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -223,14 +224,14 @@ if (isset($_SESSION['user_id'])) {
 <div class="bg-glow"></div>
 <nav class="navbar-custom">
     <div class="container d-flex align-items-center justify-content-between">
-        <a class="navbar-brand-custom" href="index.php">
+        <a class="navbar-brand-custom" href="/">
             <i class="bi bi-shield-exclamation me-1" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
         <div class="d-flex gap-2">
-            <a href="login.php" class="btn-outline-custom py-2 px-3" style="font-size:0.875rem;">
+            <a href="/login" class="btn-outline-custom py-2 px-3" style="font-size:0.875rem;">
                 <i class="bi bi-box-arrow-in-right"></i> Masuk
             </a>
-            <a href="register.php" class="btn-primary-custom py-2 px-3" style="font-size:0.875rem;">
+            <a href="/register" class="btn-primary-custom py-2 px-3" style="font-size:0.875rem;">
                 <i class="bi bi-person-plus-fill"></i> Daftar
             </a>
         </div>
@@ -251,10 +252,10 @@ if (isset($_SESSION['user_id'])) {
                     Portal digital untuk melaporkan kerusakan fasilitas sekolah dengan cepat, mudah, dan transparan. Setiap laporan langsung ditindaklanjuti.
                 </p>
                 <div class="hero-cta">
-                    <a href="register.php" class="btn-primary-custom">
+                    <a href="/register" class="btn-primary-custom">
                         <i class="bi bi-rocket-takeoff-fill"></i> Mulai Lapor Sekarang
                     </a>
-                    <a href="login.php" class="btn-outline-custom">
+                    <a href="/login" class="btn-outline-custom">
                         <i class="bi bi-person-circle"></i> Sudah Punya Akun
                     </a>
                 </div>

@@ -55,6 +55,7 @@ mysqli_data_seek($result, 0);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
     <title>Dashboard | Lapor-Sekolah</title>
     <meta name="description" content="Dashboard Lapor-Sekolah — kelola laporan kerusakan fasilitas.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -206,12 +207,12 @@ mysqli_data_seek($result, 0);
 <body>
 <nav class="navbar-custom">
     <div class="container d-flex align-items-center justify-content-between gap-3 flex-wrap">
-        <a class="navbar-brand-custom" href="dashboard.php">
+        <a class="navbar-brand-custom" href="/dashboard">
             <i class="bi bi-shield-exclamation me-1" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <?php if ($is_admin): ?>
-            <a href="kelola_user.php" style="
+            <a href="/kelola-user" style="
                 background:rgba(192,132,252,0.1); color:#c084fc;
                 border:1px solid rgba(192,132,252,0.3); border-radius:8px;
                 padding:0.35rem 0.85rem; font-size:0.8rem; font-weight:600;
@@ -228,7 +229,7 @@ mysqli_data_seek($result, 0);
                     <span class="role-badge-user">User</span>
                 <?php endif; ?>
             </div>
-            <a href="logout.php" class="btn-logout">
+            <a href="/logout" class="btn-logout">
                 <i class="bi bi-box-arrow-right"></i> Keluar
             </a>
         </div>
@@ -299,7 +300,7 @@ mysqli_data_seek($result, 0);
                     <?= $is_admin ? 'Semua Laporan Kerusakan' : 'Laporan Saya' ?>
                 </h5>
                 <?php if (!$is_admin): ?>
-                <a href="tambah.php" class="btn-tambah">
+                <a href="/tambah" class="btn-tambah">
                     <i class="bi bi-plus-lg"></i> Buat Laporan
                 </a>
                 <?php endif; ?>
@@ -366,10 +367,10 @@ mysqli_data_seek($result, 0);
                             </td>
                             <td>
                                 <?php if (!empty($laporan['foto_bukti']) && file_exists('uploads/' . $laporan['foto_bukti'])): ?>
-                                    <img src="uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
+                                    <img src="/uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
                                          alt="Foto" class="foto-thumb"
                                          data-bs-toggle="modal" data-bs-target="#fotoModal"
-                                         data-src="uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
+                                         data-src="/uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
                                          data-nama="<?= htmlspecialchars($laporan['fasilitas']) ?>">
                                 <?php else: ?>
                                     <div class="no-foto" title="Tidak ada foto"><i class="bi bi-image"></i></div>
@@ -392,7 +393,7 @@ mysqli_data_seek($result, 0);
                                             <i class="bi bi-lock-fill"></i> Terkunci
                                         </span>
                                     <?php else: ?>
-                                        <a href="edit.php?id=<?= $laporan['id'] ?>" class="btn-action btn-edit">
+                                        <a href="/tinjau/<?= $laporan['id'] ?>" class="btn-action btn-edit">
                                             <i class="bi bi-eye-fill"></i> Tinjau
                                         </a>
                                         <button type="button"
@@ -403,7 +404,7 @@ mysqli_data_seek($result, 0);
                                         </button>
                                     <?php endif; ?>
                                     <?php else: ?>
-                                    <a href="detail_laporan.php?id=<?= $laporan['id'] ?>"
+                                    <a href="/laporan/<?= $laporan['id'] ?>"
                                        class="btn-action btn-edit"
                                        style="background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.25);">
                                         <i class="bi bi-file-earmark-text-fill"></i> Lihat Detail
@@ -483,7 +484,7 @@ document.querySelectorAll('.tombol-hapus').forEach(function(btn) {
             buttonsStyling: false,
         }).then(result => {
             if (result.isConfirmed) {
-                window.location.href = 'hapus.php?id=' + id;
+                window.location.href = '/hapus/' + id;
             }
         });
     });

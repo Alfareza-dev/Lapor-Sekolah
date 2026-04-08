@@ -3,16 +3,16 @@ session_start();
 require_once 'config/koneksi.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: /login');
     exit;
 }
 if ($_SESSION['role'] !== 'admin') {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header('Location: index.php');
+    header('Location: /');
     exit;
 }
 
@@ -22,7 +22,7 @@ $sql_select = "SELECT foto_bukti FROM laporan_kerusakan WHERE id = $id LIMIT 1";
 $result     = mysqli_query($koneksi, $sql_select);
 
 if (mysqli_num_rows($result) === 0) {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -39,7 +39,7 @@ if (mysqli_query($koneksi, $sql_hapus)) {
         }
     }
 
-    header('Location: dashboard.php?pesan=hapus_sukses');
+    header('Location: /dashboard?pesan=hapus_sukses');
     exit;
 
 } else {
@@ -52,7 +52,7 @@ if (mysqli_query($koneksi, $sql_hapus)) {
         <i class="fs-1">❌</i>
         <h4 class="mt-3">Gagal Menghapus Laporan</h4>
         <p class="text-muted">' . mysqli_error($koneksi) . '</p>
-        <a href="dashboard.php" class="btn btn-outline-light mt-2">← Kembali ke Dashboard</a>
+        <a href="/dashboard" class="btn btn-outline-light mt-2">← Kembali ke Dashboard</a>
     </div>
     </body></html>
     ');

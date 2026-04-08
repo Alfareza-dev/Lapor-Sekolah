@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES ($session_user_id, '$nama_pelapor', '$fasilitas', '$deskripsi', '$nama_file_db', '$status')";
 
         if (mysqli_query($koneksi, $sql)) {
-            header('Location: dashboard.php?pesan=tambah_sukses');
+            header('Location: /dashboard?pesan=tambah_sukses');
             exit;
         } else {
             $errors[] = 'Gagal menyimpan laporan ke database: ' . mysqli_error($koneksi);
@@ -78,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
     <title>Tambah Laporan | Lapor-Sekolah</title>
     <meta name="description" content="Form untuk menambahkan laporan kerusakan fasilitas sekolah baru.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -157,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <nav class="navbar-custom sticky-top">
     <div class="container d-flex align-items-center">
-        <a class="navbar-brand-custom" href="dashboard.php">
+        <a class="navbar-brand-custom" href="/dashboard">
             <i class="bi bi-shield-exclamation me-2" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
     </div>
@@ -250,7 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <hr class="section-divider">
 
             <div class="d-flex gap-3">
-                <a href="dashboard.php" class="btn-back">
+                <a href="/dashboard" class="btn-back">
                     <i class="bi bi-arrow-left"></i> Batal
                 </a>
                 <button type="submit" class="btn-submit">

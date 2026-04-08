@@ -9,10 +9,10 @@
 // menggunakan Waktu Indonesia Barat, bukan UTC.
 date_default_timezone_set('Asia/Jakarta');
 
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');        // Ganti sesuai user MySQL kamu
-define('DB_PASS', '');            // Ganti sesuai password MySQL kamu
-define('DB_NAME', 'lapor_sekolah');
+define('DB_HOST', 'sql100.infinityfree.com');
+define('DB_USER', 'if0_41551728');        // Ganti sesuai user MySQL kamu
+define('DB_PASS', 'Flavava512');            // Ganti sesuai password MySQL kamu
+define('DB_NAME', 'if0_41551728_lapor_sekolah');
 
 // Membuat koneksi
 $koneksi = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);

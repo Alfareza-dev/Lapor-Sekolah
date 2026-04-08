@@ -3,25 +3,25 @@ session_start();
 require_once 'config/koneksi.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: /login');
     exit;
 }
 if ($_SESSION['role'] !== 'admin') {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
 $admin_id = (int) $_SESSION['user_id'];
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header('Location: kelola_user.php');
+    header('Location: /kelola-user');
     exit;
 }
 
 $target_id = (int) $_GET['id'];
 
 if ($target_id === $admin_id) {
-    header('Location: kelola_user.php');
+    header('Location: /kelola-user');
     exit;
 }
 
@@ -29,21 +29,21 @@ $sql_cek = "SELECT id, nama, email, role FROM users WHERE id = $target_id LIMIT 
 $result  = mysqli_query($koneksi, $sql_cek);
 
 if (mysqli_num_rows($result) === 0) {
-    header('Location: kelola_user.php');
+    header('Location: /kelola-user');
     exit;
 }
 
 $user_target = mysqli_fetch_assoc($result);
 
 if ($user_target['role'] === 'admin') {
-    header('Location: kelola_user.php');
+    header('Location: /kelola-user');
     exit;
 }
 
 $sql_hapus = "DELETE FROM users WHERE id = $target_id";
 
 if (mysqli_query($koneksi, $sql_hapus)) {
-    header('Location: kelola_user.php?pesan=hapus_user_sukses');
+    header('Location: /kelola-user?pesan=hapus_user_sukses');
     exit;
 } else {
     die('
@@ -55,7 +55,7 @@ if (mysqli_query($koneksi, $sql_hapus)) {
         <div style="font-size:3rem;">❌</div>
         <h4 class="mt-3">Gagal Menghapus Akun User</h4>
         <p class="text-muted mt-2">' . htmlspecialchars(mysqli_error($koneksi)) . '</p>
-        <a href="kelola_user.php" class="btn btn-outline-light mt-3">
+        <a href="/kelola-user" class="btn btn-outline-light mt-3">
             ← Kembali ke Kelola User
         </a>
     </div>

@@ -4,12 +4,12 @@ require_once 'config/koneksi.php';
 require_once 'config/auth_check.php';
 
 if ($_SESSION['role'] !== 'admin') {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -19,14 +19,14 @@ $sql_select = "SELECT * FROM laporan_kerusakan WHERE id = $id LIMIT 1";
 $res_laporan = mysqli_query($koneksi, $sql_select);
 
 if (!$res_laporan || mysqli_num_rows($res_laporan) === 0) {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
 $laporan = mysqli_fetch_assoc($res_laporan);
 
 if (is_null($laporan['user_id'])) {
-    header('Location: dashboard.php?pesan=laporan_terkunci');
+    header('Location: /dashboard?pesan=laporan_terkunci');
     exit;
 }
 
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
-            header('Location: dashboard.php?pesan=edit_sukses');
+            header('Location: /dashboard?pesan=edit_sukses');
             exit;
         } else {
             $errors[] = 'Gagal memperbarui data: ' . mysqli_stmt_error($stmt);
@@ -65,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
     <title>Tinjau Laporan #<?= $id ?> | Lapor-Sekolah</title>
     <meta name="description" content="Admin meninjau dan memperbarui status laporan kerusakan fasilitas.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -326,10 +327,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <nav class="navbar-custom">
     <div class="container d-flex align-items-center justify-content-between">
-        <a class="navbar-brand-custom" href="dashboard.php">
+        <a class="navbar-brand-custom" href="/dashboard">
             <i class="bi bi-shield-exclamation me-1" style="-webkit-text-fill-color:#818cf8;"></i>Lapor<span>-Sekolah</span>
         </a>
-        <a href="dashboard.php" class="btn-back-nav">
+        <a href="/dashboard" class="btn-back-nav">
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
     </div>
@@ -389,7 +390,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div style="margin-bottom:1.5rem;">
                     <label class="form-label-custom"><i class="bi bi-image me-1"></i>Foto Bukti</label>
                     <div style="margin-top:0.5rem;">
-                        <img src="uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
+                        <img src="/uploads/<?= htmlspecialchars($laporan['foto_bukti']) ?>"
                              alt="Foto Bukti"
                              style="max-width:220px;border-radius:10px;border:2px solid var(--border);">
                     </div>
@@ -428,7 +429,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <hr class="section-divider">
 
                 <div class="d-flex gap-3">
-                    <a href="dashboard.php" class="btn-back">
+                    <a href="/dashboard" class="btn-back">
                         <i class="bi bi-arrow-left"></i> Batal
                     </a>
                     <button type="submit" class="btn-submit">

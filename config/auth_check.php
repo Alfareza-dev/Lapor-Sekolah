@@ -18,7 +18,7 @@
 // Jika tidak ada user_id di session sama sekali,
 // redirect ke login (guard dasar).
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: /login');
     exit; // ← WAJIB: hentikan eksekusi script setelah redirect
 }
 
@@ -41,7 +41,7 @@ if (!$ghost_result || mysqli_num_rows($ghost_result) === 0) {
 
     // Redirect ke login dengan parameter khusus
     // login.php akan menampilkan SweetAlert2 dari parameter ini
-    header('Location: login.php?pesan=akun_dihapus');
+    header('Location: /login?pesan=akun_dihapus');
     exit; // ← KRITIS: tanpa ini, script tetap berjalan → FK constraint error!
 }
 

@@ -1,0 +1,51 @@
+# ============================================================
+# Lapor-Sekolah — Pretty URL Rules
+# Apache mod_rewrite | Dibuat: 2026
+# ============================================================
+
+Options -Indexes
+
+# ── Halaman Error Kustom ─────────────────────────────────────
+ErrorDocument 404 /404.php
+
+RewriteEngine On
+
+# ── Keamanan: Lindungi folder config ────────────────────────
+RewriteRule ^config(/.*)?$ - [F,L]
+
+# ── Jangan proses aset nyata (file/folder yang benar-benar ada) ──
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# ==============================================================
+# BLOK 1: URL Tanpa Ekstensi → .php
+# Halaman statis (tanpa parameter ID)
+# Contoh: /dashboard  →  dashboard.php
+#         /login      →  login.php
+# ==============================================================
+RewriteRule ^dashboard$        dashboard.php   [L]
+RewriteRule ^tambah$           tambah.php      [L]
+RewriteRule ^kelola-user$      kelola_user.php [L]
+RewriteRule ^login$            login.php       [L]
+RewriteRule ^register$         register.php    [L]
+RewriteRule ^logout$           logout.php      [L]
+
+# ==============================================================
+# BLOK 2: URL Slash-Based dengan Parameter ID
+# Contoh: /laporan/17    →  detail_laporan.php?id=17
+#         /tinjau/17     →  edit.php?id=17  (admin review)
+#         /edit/17       →  edit.php?id=17  (user edit laporan sendiri)
+#         /hapus/17      →  hapus.php?id=17
+#         /hapus-user/5  →  hapus_user.php?id=5
+# ==============================================================
+RewriteRule ^laporan/([0-9]+)$    detail_laporan.php?id=$1 [QSA,L]
+RewriteRule ^tinjau/([0-9]+)$     edit.php?id=$1           [QSA,L]
+RewriteRule ^edit/([0-9]+)$       edit.php?id=$1           [QSA,L]
+RewriteRule ^hapus/([0-9]+)$      hapus.php?id=$1          [QSA,L]
+RewriteRule ^hapus-user/([0-9]+)$ hapus_user.php?id=$1     [QSA,L]
+
+# ==============================================================
+# BLOK 3: Halaman index (root URL → index.php)
+# ==============================================================
+RewriteRule ^$  index.php  [L]
